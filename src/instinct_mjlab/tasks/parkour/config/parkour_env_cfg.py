@@ -156,7 +156,7 @@ _PARKOUR_BASE_VELOCITY_RANGES = {
 ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
   seed=0,
   size=(8.0, 8.0),
-  border_width=0.0,
+  border_width=3.0,
   num_rows=10,
   num_cols=20,
   horizontal_scale=0.05,
@@ -175,7 +175,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       fractal_gain=0.25,
       centering=True,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       flat_patch_sampling={
@@ -193,7 +193,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       fractal_gain=0.25,
       centering=True,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       flat_patch_sampling={
@@ -208,7 +208,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       gap_depth=(0.4, 0.6),
       platform_width=2.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       flat_patch_sampling={
@@ -227,7 +227,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       step_width=0.3,
       platform_width=2.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -254,7 +254,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       step_width=1.5,
       platform_width=4.0,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -281,7 +281,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       step_width=0.3,
       platform_width=2.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -308,7 +308,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       step_width=1.5,
       platform_width=4.0,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -337,7 +337,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       obstacle_height_range=(0.05, 0.45),
       platform_width=1.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -363,7 +363,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       obstacle_height_range=(0.05, 0.45),
       platform_width=1.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -385,7 +385,7 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
       slope_range=(0.0, 0.7),
       platform_width=1.5,
       border_width=_PARKOUR_WALL_ALIGNMENT_BORDER_WIDTH,
-      wall_prob=[0.0, 0.0, 0.0, 0.0],
+      wall_prob=[0.3, 0.3, 0.3, 0.3],
       wall_height=5.0,
       wall_thickness=0.05,
       perlin_cfg=PerlinPlaneTerrainCfg(
@@ -406,8 +406,6 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
 )
 
 ROUGH_TERRAINS_CFG_PLAY = copy.deepcopy(ROUGH_TERRAINS_CFG)
-for _sub_terrain_name, _sub_terrain_cfg in ROUGH_TERRAINS_CFG_PLAY.sub_terrains.items():
-  _sub_terrain_cfg.wall_prob = [0.0, 0.0, 0.0, 0.0]
 ROUGH_TERRAINS_CFG_PLAY.num_rows = 4
 ROUGH_TERRAINS_CFG_PLAY.num_cols = 10
 
@@ -1172,17 +1170,19 @@ def set_parkour_terrain(cfg: ManagerBasedRlEnvCfg, play: bool) -> None:
 
 
 def set_parkour_scene_visual_style(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour scene visual style (restore checker-style terrain contrast)."""
+  """Set parkour scene visual style (bright, high-visibility terrain)."""
   apply_scene_visual_style(
     cfg.scene,
     style_name="parkour",
     style_cfg=SceneVisualStyleCfg(
       ground_builtin="checker",
       ground_mark="edge",
-      ground_rgb1=(0.2, 0.3, 0.4),
-      ground_rgb2=(0.1, 0.2, 0.3),
-      ground_mark_rgb=(0.8, 0.8, 0.8),
-      ground_reflectance=0.2,
+      # Use near-white tones so terrain relief is easier to read than the
+      # previous dark blue style.
+      ground_rgb1=(0.96, 0.96, 0.96),
+      ground_rgb2=(0.88, 0.88, 0.88),
+      ground_mark_rgb=(0.78, 0.78, 0.78),
+      ground_reflectance=0.05,
     ),
     preserve_collision_rgba=False,
   )
