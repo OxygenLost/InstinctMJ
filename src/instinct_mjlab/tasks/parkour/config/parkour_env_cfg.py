@@ -1040,7 +1040,7 @@ def set_parkour_terminations(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.terminations = {
     "time_out": TerminationTermCfg(func=envs_mdp.time_out, time_out=True),
     "terrain_out_bound": TerminationTermCfg(
-      func=parkour_mdp.sub_terrain_out_of_bounds,
+      func=instinct_envs_mdp.terrain_out_of_bounds,
       time_out=True,
       params={"distance_buffer": 2.0},
     ),

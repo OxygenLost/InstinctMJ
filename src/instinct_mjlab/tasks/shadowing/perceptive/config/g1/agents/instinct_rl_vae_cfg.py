@@ -40,10 +40,7 @@ class Conv2dHeadEncoderCfg:
 
         takeout_input_components: bool = True
 
-
-        depth_image: object = field(default_factory=lambda: DepthImageEncoderCfg())
-
-
+    depth_image: object = field(default_factory=lambda: DepthImageEncoderCfg())
 
 @dataclass(kw_only=True)
 class PolicyCfg(InstinctRlEncoderActorCriticCfg):

@@ -197,19 +197,21 @@ class PerceptiveShadowingSceneCfg(InteractiveSceneCfg):
                     path="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
                     metadata_yaml="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
                     collision_coacd=True,
+                    # Use CoACD hulls directly as rendered terrain mesh (instead of source STL mesh).
+                    collision_coacd_visualize_collision_hulls=True,
+                    collision_coacd_threshold=0.04,
+                    # Keep hull geometry detailed to avoid blocky/disconnected visual artifacts.
+                    collision_coacd_decimate=False,
+                    collision_coacd_max_ch_vertex=256,
+                    collision_coacd_resolution=3000,
+                    # Keep stable runtime/caching behavior.
+                    collision_coacd_log_level="off",
+                    collision_coacd_use_disk_cache=True,
                     collision_coacd_prewarm_all=True,
                     collision_coacd_prewarm_workers=0,
-                    collision_coacd_threshold=0.06,
-                    collision_coacd_preprocess_mode="on",
-                    collision_coacd_resolution=2500,
-                    # MJWarp EPA horizon is fixed at 24; decimate each CoACD hull
-                    # to keep per-hull silhouette complexity bounded.
-                    collision_coacd_decimate=True,
-                    collision_coacd_max_ch_vertex=16,
-                    collision_coacd_visualize_collision_hulls=False,
-                    collision_coacd_collision_geom_group=2,
-                    collision_coacd_collision_geom_rgba=(0.84, 0.85, 0.87, 1.0),
-                    collision_coacd_hide_source_visual_mesh=True,
+                    collision_coacd_geom_margin=0.0,
+                    collision_coacd_z_offset=0.0,
+                    collision_coacd_auto_align_top_surface=True,
                 ),
             },
         ),
@@ -937,7 +939,7 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 robot_cfg=SceneEntityCfg("robot"),
                 motion_reference_cfg=SceneEntityCfg("motion_reference"),
                 in_base_frame=True,
-                check_at_keyframe_threshold=-1,
+                check_at_keyframe_threshold=0.03,
             ),
         ),
 
@@ -953,8 +955,16 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
         "shadowing_joint_pos": MonitorTermCfg(
             func=ShadowingJointPosMonitorTerm,
             params=dict(
-                robot_cfg=SceneEntityCfg("robot"),
-                motion_reference_cfg=SceneEntityCfg("motion_reference"),
+                robot_cfg=SceneEntityCfg(
+                    "robot",
+                    joint_names=list(G1_29DOF_INSTINCTLAB_JOINT_ORDER),
+                    preserve_order=True,
+                ),
+                motion_reference_cfg=SceneEntityCfg(
+                    "motion_reference",
+                    joint_names=list(G1_29DOF_INSTINCTLAB_JOINT_ORDER),
+                    preserve_order=True,
+                ),
                 masking=True,
             ),
         ),
@@ -962,8 +972,16 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
         "shadowing_joint_vel": MonitorTermCfg(
             func=ShadowingJointVelMonitorTerm,
             params=dict(
-                robot_cfg=SceneEntityCfg("robot"),
-                motion_reference_cfg=SceneEntityCfg("motion_reference"),
+                robot_cfg=SceneEntityCfg(
+                    "robot",
+                    joint_names=list(G1_29DOF_INSTINCTLAB_JOINT_ORDER),
+                    preserve_order=True,
+                ),
+                motion_reference_cfg=SceneEntityCfg(
+                    "motion_reference",
+                    joint_names=list(G1_29DOF_INSTINCTLAB_JOINT_ORDER),
+                    preserve_order=True,
+                ),
                 masking=True,
             ),
         ),

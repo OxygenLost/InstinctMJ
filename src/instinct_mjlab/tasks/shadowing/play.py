@@ -130,9 +130,9 @@ def main():
 
     # override
     if args_cli.x_offset is not None:
-        env_cfg.events.reset_robot.params["randomize_pose_range"]["x"] = [args_cli.x_offset] * 2
+        env_cfg.events["reset_robot"].params["randomize_pose_range"]["x"] = [args_cli.x_offset] * 2
     if args_cli.y_offset is not None:
-        env_cfg.events.reset_robot.params["randomize_pose_range"]["y"] = [args_cli.y_offset] * 2
+        env_cfg.events["reset_robot"].params["randomize_pose_range"]["y"] = [args_cli.y_offset] * 2
 
     agent_cfg: InstinctRlOnPolicyRunnerCfg = cli_args.parse_instinct_rl_cfg(args_cli.task, args_cli)
 

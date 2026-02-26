@@ -152,7 +152,7 @@ def _apply_motion_matched_terrain_source(
 @dataclass(kw_only=True)
 class G1PerceptiveShadowingEnvCfg(perceptual_cfg.PerceptiveShadowingEnvCfg):
     scene: perceptual_cfg.PerceptiveShadowingSceneCfg = field(default_factory=lambda: perceptual_cfg.PerceptiveShadowingSceneCfg(
-        num_envs=1024 * 3,
+        num_envs=2048,
         entities=perceptual_cfg.make_perceptive_scene_entities(
             robot=deepcopy(G1_CFG),
         ),
@@ -174,7 +174,7 @@ class G1PerceptiveShadowingEnvCfg(perceptual_cfg.PerceptiveShadowingEnvCfg):
         self.sim.njmax = 700
         self.sim.nconmax = 128
         # Raise CCD iterations for perceptive terrain contacts (default 50 can trigger EPA horizon warnings).
-        self.sim.mujoco.ccd_iterations = 200
+        self.sim.mujoco.ccd_iterations = 128
         # Mirror parkour CCD mode for dense terrain contact pairs.
         self.sim.mujoco.multiccd = True
 
