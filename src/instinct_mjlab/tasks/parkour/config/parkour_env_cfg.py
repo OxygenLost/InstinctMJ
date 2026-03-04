@@ -26,7 +26,6 @@ from mjlab.terrains import FlatPatchSamplingCfg
 from mjlab.utils.noise import UniformNoiseCfg
 
 import instinct_mjlab.envs.mdp as instinct_envs_mdp
-from instinct_mjlab.assets.unitree_g1 import G1_29DOF_INSTINCTLAB_JOINT_ORDER
 from instinct_mjlab.sensors.noisy_camera import NoisyGroupedRayCasterCameraCfg
 from instinct_mjlab.sensors.volume_points import (
   Grid3dPointsGeneratorCfg,
@@ -152,7 +151,6 @@ ROUGH_TERRAINS_CFG = FiledTerrainGeneratorCfg(
   horizontal_scale=0.07,
   vertical_scale=0.005,
   slope_threshold=1.0,
-  use_cache=False,
   curriculum=True,
   add_lights=True,
   sub_terrains={
@@ -413,8 +411,7 @@ def rough_terrains_cfg(play: bool = False) -> FiledTerrainGeneratorCfg:
 def set_parkour_scene_sensors(cfg: ManagerBasedRlEnvCfg) -> None:
   """Set parkour-specific sensors on the scene (in-place).
 
-  Mirrors the original InstinctLab ``SceneCfg`` sensor definitions:
-  contact_forces, torso_contact_forces, undesired_contact_forces,
+  Configures contact_forces, torso_contact_forces, undesired_contact_forces,
   leg_volume_points, left/right_height_scanner, and camera.
   """
   feet_contact_sensor = ContactSensorCfg(
@@ -544,10 +541,7 @@ def set_parkour_scene_sensors(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_commands(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour-specific command configuration (in-place).
-
-  Mirrors the original InstinctLab ``CommandsCfg``.
-  """
+  """Set parkour-specific command configuration (in-place)."""
   ranges_cfg = PoseVelocityCommandCfg.Ranges(
     lin_vel_x=(0.0, 0.0),
     lin_vel_y=(0.0, 0.0),
@@ -578,12 +572,8 @@ def set_parkour_commands(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour-specific policy/critic observation groups (in-place).
-
-  Mirrors the original InstinctLab ``ObservationsCfg.PolicyCfg`` and
-  ``ObservationsCfg.CriticCfg``.
-  """
-  policy_terms = {
+  """Set parkour-specific policy/critic observation groups (in-place)."""
+  actor_terms = {
     "base_ang_vel": ObservationTermCfg(
       func=envs_mdp.base_ang_vel,
       noise=UniformNoiseCfg(n_min=-0.2, n_max=0.2),
@@ -609,8 +599,7 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         ),
       },
       noise=UniformNoiseCfg(n_min=-0.01, n_max=0.01),
@@ -622,8 +611,7 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         ),
       },
       noise=UniformNoiseCfg(n_min=-0.5, n_max=0.5),
@@ -678,8 +666,7 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         ),
       },
       history_length=_PARKOUR_PROPRIO_HISTORY_LENGTH,
@@ -690,8 +677,7 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         ),
       },
       scale=0.05,
@@ -716,8 +702,8 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       noise=None,
     ),
   }
-  cfg.observations["policy"] = ObservationGroupCfg(
-    terms=policy_terms,
+  cfg.observations["actor"] = ObservationGroupCfg(
+    terms=actor_terms,
     concatenate_terms=False,
     enable_corruption=True,
   )
@@ -726,14 +712,12 @@ def set_parkour_observations(cfg: ManagerBasedRlEnvCfg) -> None:
     concatenate_terms=False,
     enable_corruption=False,
   )
+  # Keep a policy alias for tooling that still expects "policy" as a group name.
+  cfg.observations["policy"] = cfg.observations["actor"]
 
 
 def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set AMP policy/reference observation groups (in-place).
-
-  Mirrors the original InstinctLab ``ObservationsCfg.AmpPolicyStateObsCfg``
-  and ``ObservationsCfg.AmpReferenceStateObsCfg``.
-  """
+  """Set AMP policy/reference observation groups (in-place)."""
   amp_policy_terms = {
     "projected_gravity": ObservationTermCfg(
       func=envs_mdp.projected_gravity,
@@ -745,8 +729,7 @@ def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         )
       },
       history_length=_PARKOUR_AMP_HISTORY_LENGTH,
@@ -757,8 +740,7 @@ def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="robot",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         )
       },
       scale=0.05,
@@ -790,8 +772,7 @@ def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="motion_reference",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         )
       },
       history_length=_PARKOUR_AMP_HISTORY_LENGTH,
@@ -802,8 +783,7 @@ def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
       params={
         "asset_cfg": SceneEntityCfg(
           name="motion_reference",
-          joint_names=G1_29DOF_INSTINCTLAB_JOINT_ORDER,
-          preserve_order=True,
+          joint_names=".*",
         )
       },
       scale=0.05,
@@ -841,11 +821,7 @@ def set_parkour_amp_observations(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_rewards(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour reward terms (in-place).
-
-  Mirrors the original InstinctLab ``G1Rewards`` (task rewards,
-  regularization rewards, and safety rewards).
-  """
+  """Set parkour reward terms (in-place)."""
   cfg.rewards = {
     # ---------- Task rewards ----------
     "track_lin_vel_xy_exp": RewardTermCfg(
@@ -1033,10 +1009,7 @@ def set_parkour_rewards(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_terminations(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour termination terms (in-place).
-
-  Mirrors the original InstinctLab ``TerminationsCfg``.
-  """
+  """Set parkour termination terms (in-place)."""
   cfg.terminations = {
     "time_out": TerminationTermCfg(func=envs_mdp.time_out, time_out=True),
     "terrain_out_bound": TerminationTermCfg(
@@ -1065,10 +1038,7 @@ def set_parkour_terminations(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_events(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour event terms (in-place).
-
-  Mirrors the original InstinctLab ``EventCfg``.
-  """
+  """Set parkour event terms (in-place)."""
   cfg.events = {
     "physics_material": EventTermCfg(
       func=parkour_mdp.randomize_rigid_body_material,
@@ -1077,8 +1047,6 @@ def set_parkour_events(cfg: ManagerBasedRlEnvCfg) -> None:
         "asset_cfg": SceneEntityCfg("robot", geom_names=".*"),
         "static_friction_range": (0.3, 1.6),
         "dynamic_friction_range": (0.3, 1.6),
-        "restitution_range": (0.05, 0.5),
-        "num_buckets": 64,
         "make_consistent": True,
       },
     ),
@@ -1123,10 +1091,7 @@ def set_parkour_events(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_curriculum(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour curriculum terms (in-place).
-
-  Mirrors the original InstinctLab ``CurriculumCfg``.
-  """
+  """Set parkour curriculum terms (in-place)."""
   cfg.curriculum = {
     "terrain_levels": CurriculumTermCfg(
       func=parkour_mdp.tracking_exp_vel,
@@ -1212,10 +1177,7 @@ def _soften_parkour_terrain_lights(spec) -> None:
 
 
 def set_parkour_basic_settings(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set parkour basic environment settings (in-place).
-
-  Mirrors the original InstinctLab ``ParkourEnvCfg.__post_init__`` settings.
-  """
+  """Set parkour basic environment settings (in-place)."""
   cfg.scene.num_envs = 1024 * 2
   cfg.scene.env_spacing = 2.5
   cfg.episode_length_s = 20.0
@@ -1241,13 +1203,10 @@ def set_parkour_basic_settings(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def set_parkour_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Apply play-mode overrides to a parkour env cfg (in-place).
-
-  Mirrors the original InstinctLab ``G1ParkourRoughEnvCfg_PLAY.__post_init__``.
-  """
+  """Apply play-mode overrides to a parkour env cfg (in-place)."""
   cfg.scene.num_envs = 10
   cfg.scene.env_spacing = 2.5
-  cfg.episode_length_s = 20.0
+  cfg.episode_length_s = 10.0
 
   # spawn the robot randomly in the grid (instead of their terrain levels)
   # reduce the number of terrains to save memory

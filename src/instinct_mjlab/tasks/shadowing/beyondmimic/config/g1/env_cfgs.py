@@ -1,4 +1,4 @@
-"""G1 BeyondMimic environment config adapters."""
+"""G1 BeyondMimic environment configs."""
 
 from __future__ import annotations
 

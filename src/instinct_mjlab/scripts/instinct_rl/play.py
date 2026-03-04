@@ -109,6 +109,35 @@ def _resolve_viewer_backend(viewer: str) -> str:
   return "native" if has_display else "viser"
 
 
+def _disable_headless_debug_visualization(env_cfg) -> None:
+  """Disable GUI-dependent debug visualizations for headless play runs."""
+  scene = getattr(env_cfg, "scene", None)
+  if scene is not None:
+    sensors = getattr(scene, "sensors", ())
+    for sensor_cfg in sensors:
+      if hasattr(sensor_cfg, "debug_vis"):
+        sensor_cfg.debug_vis = False
+
+  commands = getattr(env_cfg, "commands", None)
+  if isinstance(commands, dict):
+    for command_cfg in commands.values():
+      if hasattr(command_cfg, "debug_vis"):
+        command_cfg.debug_vis = False
+
+  observations = getattr(env_cfg, "observations", None)
+  if isinstance(observations, dict):
+    for group_cfg in observations.values():
+      if group_cfg is None:
+        continue
+      terms = getattr(group_cfg, "terms", None)
+      if not isinstance(terms, dict):
+        continue
+      for term_cfg in terms.values():
+        params = getattr(term_cfg, "params", None)
+        if isinstance(params, dict) and "debug_vis" in params:
+          params["debug_vis"] = False
+
+
 def _resolve_rollout_steps(cfg: PlayConfig) -> int | None:
   if cfg.max_steps is not None:
     return cfg.max_steps
@@ -405,6 +434,10 @@ def run_play(task_id: str, cfg: PlayConfig) -> None:
   device = _resolve_device(cfg.device)
   checkpoint: Path | None = None
 
+  has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+  if viewer_backend != "native" or not has_display:
+    _disable_headless_debug_visualization(env_cfg)
+
   if cfg.num_envs is not None:
     env_cfg.scene.num_envs = cfg.num_envs
   if cfg.video_height is not None:
@@ -471,7 +504,7 @@ def run_play(task_id: str, cfg: PlayConfig) -> None:
     runner = None
     if checkpoint is not None or cfg.export_onnx:
       runner_cls = load_runner_cls(task_id) or OnPolicyRunner
-      agent_cfg_dict = asdict(agent_cfg)
+      agent_cfg_dict = agent_cfg.to_dict() if hasattr(agent_cfg, "to_dict") else asdict(agent_cfg)
       prepare_distillation_algorithm_cfg(
         agent_cfg=agent_cfg_dict,
         obs_format=vec_env.get_obs_format(),

@@ -1,4 +1,4 @@
-"""Observation helpers for migrated Instinct perceptive tasks."""
+"""Observation helpers for instinct_mjlab perceptive tasks."""
 
 from __future__ import annotations
 
@@ -173,7 +173,7 @@ def perceptive_depth_image(
 ) -> torch.Tensor:
   """Depth image term with raycaster-first and camera-fallback support.
 
-  Preferred path is `RayCastSensor` to match InstinctLab perceptive raycaster.
+  Preferred path is `RayCastSensor`.
   If a camera sensor is provided, falls back to rendered depth map preprocessing.
   """
   sensor = env.scene[sensor_name]
@@ -274,12 +274,10 @@ def perceptive_link_rot_b(env, command_name: str = "motion") -> torch.Tensor:
 
 def parkour_amp_reference_projected_gravity(
   env,
-  asset_cfg=None,
+  asset_cfg: SceneEntityCfg = SceneEntityCfg("motion_reference"),
 ) -> torch.Tensor:
   """Projected gravity in the motion-reference base frame for AMP reference states."""
-  motion_reference = env.scene[
-    "motion_reference" if asset_cfg is None else asset_cfg.name
-  ]
+  motion_reference = env.scene[asset_cfg.name]
   base_quat_w = motion_reference.reference_frame.base_quat_w[:, 0]
   gravity_w = torch.zeros(
     base_quat_w.shape[0],
@@ -293,55 +291,36 @@ def parkour_amp_reference_projected_gravity(
 
 def parkour_amp_reference_joint_pos_rel(
   env,
-  asset_cfg: SceneEntityCfg | None = None,
+  asset_cfg: SceneEntityCfg = SceneEntityCfg("motion_reference"),
   robot_name: str = "robot",
 ) -> torch.Tensor:
   """Reference joint positions relative to robot default joint positions."""
-  motion_reference = env.scene[
-    "motion_reference" if asset_cfg is None else asset_cfg.name
-  ]
-  joint_ids = slice(None) if asset_cfg is None else asset_cfg.joint_ids
+  motion_reference = env.scene[asset_cfg.name]
   robot = env.scene[robot_name]
-  default_joint_pos = robot.data.default_joint_pos
-  assert default_joint_pos is not None
-  reference_joint_pos = motion_reference.reference_frame.joint_pos[:, 0, joint_ids]
-  reference_joint_pos_mask = motion_reference.reference_frame.joint_pos_mask[
-    :, 0, joint_ids
-  ]
-  return (
-    reference_joint_pos - default_joint_pos[:, joint_ids]
-  ) * reference_joint_pos_mask
+  joint_pos = motion_reference.reference_frame.joint_pos[:, 0, asset_cfg.joint_ids]
+  joint_pos_rel = joint_pos - robot.data.default_joint_pos[:, asset_cfg.joint_ids]
+  return joint_pos_rel * motion_reference.reference_frame.joint_pos_mask[:, 0, asset_cfg.joint_ids]
 
 
 def parkour_amp_reference_joint_vel_rel(
   env,
-  asset_cfg: SceneEntityCfg | None = None,
+  asset_cfg: SceneEntityCfg = SceneEntityCfg("motion_reference"),
   robot_name: str = "robot",
 ) -> torch.Tensor:
   """Reference joint velocities relative to robot default joint velocities."""
-  motion_reference = env.scene[
-    "motion_reference" if asset_cfg is None else asset_cfg.name
-  ]
-  joint_ids = slice(None) if asset_cfg is None else asset_cfg.joint_ids
+  motion_reference = env.scene[asset_cfg.name]
   robot = env.scene[robot_name]
-  default_joint_vel = robot.data.default_joint_vel
-  assert default_joint_vel is not None
-  reference_joint_vel = motion_reference.reference_frame.joint_vel[:, 0, joint_ids]
-  reference_joint_vel_mask = motion_reference.reference_frame.joint_vel_mask[
-    :, 0, joint_ids
-  ]
-  masked_joint_vel = reference_joint_vel * reference_joint_vel_mask
-  return masked_joint_vel - default_joint_vel[:, joint_ids]
+  joint_vel = motion_reference.reference_frame.joint_vel[:, 0, asset_cfg.joint_ids]
+  joint_vel = joint_vel * motion_reference.reference_frame.joint_vel_mask[:, 0, asset_cfg.joint_ids]
+  return joint_vel - robot.data.default_joint_vel[:, asset_cfg.joint_ids]
 
 
 def parkour_amp_reference_base_lin_vel(
   env,
-  asset_cfg=None,
+  asset_cfg: SceneEntityCfg = SceneEntityCfg("motion_reference"),
 ) -> torch.Tensor:
   """Reference base linear velocity in the motion-reference base frame."""
-  motion_reference = env.scene[
-    "motion_reference" if asset_cfg is None else asset_cfg.name
-  ]
+  motion_reference = env.scene[asset_cfg.name]
   base_quat_w = motion_reference.reference_frame.base_quat_w[:, 0]
   base_lin_vel_w = motion_reference.reference_frame.base_lin_vel_w[:, 0]
   return quat_apply_inverse(base_quat_w, base_lin_vel_w)
@@ -349,12 +328,10 @@ def parkour_amp_reference_base_lin_vel(
 
 def parkour_amp_reference_base_ang_vel(
   env,
-  asset_cfg=None,
+  asset_cfg: SceneEntityCfg = SceneEntityCfg("motion_reference"),
 ) -> torch.Tensor:
   """Reference base angular velocity in the motion-reference base frame."""
-  motion_reference = env.scene[
-    "motion_reference" if asset_cfg is None else asset_cfg.name
-  ]
+  motion_reference = env.scene[asset_cfg.name]
   base_quat_w = motion_reference.reference_frame.base_quat_w[:, 0]
   base_ang_vel_w = motion_reference.reference_frame.base_ang_vel_w[:, 0]
   return quat_apply_inverse(base_quat_w, base_ang_vel_w)
@@ -468,7 +445,7 @@ class PerceptiveRaycastNoised(_PerceptiveRaycastNoisedBase):
 class PerceptiveRaycastNoisedHistory(_PerceptiveRaycastNoisedBase):
   """Stateful noised depth-history term with skip-frame semantics.
 
-  Matches InstinctLab behavior for `distance_to_image_plane_noised_history`
+  Implements `distance_to_image_plane_noised_history`
   + `history_skip_frames` without relying on observation-manager history.
   """
 

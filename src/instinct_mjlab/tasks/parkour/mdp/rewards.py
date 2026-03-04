@@ -20,11 +20,7 @@ def track_lin_vel_xy_exp(
   std: float,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
-  """Reward tracking reference linear velocity (x/y in body frame).
-
-  Mirrors the original InstinctLab ``track_lin_vel_xy_exp`` which uses
-  ``env.command_manager.get_command(command_name)[:, :2]`` directly.
-  """
+  """Reward tracking of reference linear velocity (x/y in body frame)."""
   asset: Entity = env.scene[asset_cfg.name]
   command = env.command_manager.get_command(command_name)
   lin_vel_error = torch.sum(
@@ -40,11 +36,7 @@ def track_ang_vel_z_exp(
   std: float,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
-  """Reward tracking reference yaw angular velocity (body frame).
-
-  Mirrors the original InstinctLab ``track_ang_vel_z_exp`` which uses
-  ``env.command_manager.get_command(command_name)[:, 2]`` directly.
-  """
+  """Reward tracking of reference yaw angular velocity (body frame)."""
   asset: Entity = env.scene[asset_cfg.name]
   command = env.command_manager.get_command(command_name)
   ang_vel_error = torch.square(command[:, 2] - asset.data.root_link_ang_vel_b[:, 2])
@@ -52,10 +44,7 @@ def track_ang_vel_z_exp(
 
 
 def heading_error(env: ManagerBasedRlEnv, command_name: str) -> torch.Tensor:
-  """Compute heading command magnitude (InstinctLab-compatible).
-
-  Mirrors the original: ``torch.abs(env.command_manager.get_command(command_name)[:, 2])``.
-  """
+  """Compute heading command magnitude."""
   command = env.command_manager.get_command(command_name)
   return torch.abs(command[:, 2])
 
@@ -65,11 +54,7 @@ def dont_wait(
   command_name: str,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
-  """Penalize standing still when there is a forward velocity command.
-
-  Mirrors the original InstinctLab ``dont_wait`` which uses
-  ``env.command_manager.get_command(command_name)[:, 0]`` directly.
-  """
+  """Penalize standing still when there is a forward velocity command."""
   asset: Entity = env.scene[asset_cfg.name]
   lin_vel_cmd_x = env.command_manager.get_command(command_name)[:, 0]
   lin_vel_x = asset.data.root_link_lin_vel_b[:, 0]
@@ -86,14 +71,9 @@ def stand_still(
   threshold: float = 0.15,
   offset: float = 1.0,
 ) -> torch.Tensor:
-  """Penalize moving when there is no velocity command.
-
-  Mirrors the original InstinctLab ``stand_still``.
-  """
+  """Penalize moving when there is no velocity command."""
   asset: Entity = env.scene[asset_cfg.name]
-  default_joint_pos = asset.data.default_joint_pos
-  assert default_joint_pos is not None
-  dof_error = torch.sum(torch.abs(asset.data.joint_pos - default_joint_pos), dim=1)
+  dof_error = torch.sum(torch.abs(asset.data.joint_pos - asset.data.default_joint_pos), dim=1)
 
   cmd = env.command_manager.get_command(command_name)
   cmd_lin_norm = torch.norm(cmd[:, :2], dim=1)
@@ -110,14 +90,15 @@ def feet_air_time(
 ) -> torch.Tensor:
   """Reward long steps taken by the feet for bipeds.
 
-  Mirrors the original InstinctLab ``feet_air_time``.
+  This function rewards the agent for taking steps up to a specified threshold
+  and also keeping one foot at a time in the air.
+
+  If the commands are small (i.e. the agent is not supposed to take a step),
+  then the reward is zero.
   """
   contact_sensor: ContactSensor = env.scene[sensor_name]
   air_time = contact_sensor.data.current_air_time
   contact_time = contact_sensor.data.current_contact_time
-  assert air_time is not None
-  assert contact_time is not None
-
   in_contact = contact_time > 0.0
   in_mode_time = torch.where(in_contact, contact_time, air_time)
   single_stance = torch.sum(in_contact.int(), dim=1) == 1
@@ -138,29 +119,13 @@ def feet_slide(
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
   threshold: float = 1.0,
 ) -> torch.Tensor:
-  """Penalize foot sliding speed while feet are in contact.
-
-  Mirrors the original InstinctLab ``contact_slide``.
-  ``threshold`` is the contact force threshold (Newtons) — matches the
-  original semantics where ``net_forces_w_history.norm() > threshold``
-  determines contact.
-  """
+  """Penalize foot sliding speed while feet are in contact."""
   asset: Entity = env.scene[asset_cfg.name]
   sensor: ContactSensor = env.scene[sensor_name]
 
-  # Original: contacts = net_forces_w_history[...].norm(dim=-1).max(dim=1)[0] > threshold
-  force_history = sensor.data.force_history
-  if force_history is not None:
-    in_contact = torch.max(torch.linalg.vector_norm(force_history, dim=-1), dim=2)[0] > threshold
-  else:
-    force = sensor.data.force
-    assert force is not None
-    in_contact = torch.linalg.vector_norm(force, dim=-1) > threshold
-
+  in_contact = torch.max(torch.linalg.vector_norm(sensor.data.force_history, dim=-1), dim=2)[0] > threshold
   foot_vel_xy = asset.data.body_link_lin_vel_w[:, asset_cfg.body_ids, :2]
   slip_speed = torch.norm(foot_vel_xy, dim=-1)
-  # Original: torch.sum(body_vel.norm(dim=-1) * contacts, dim=1)
-  # No slip speed threshold/clamp — penalize raw speed
   return torch.sum(slip_speed * in_contact.float(), dim=1)
 
 
@@ -177,9 +142,7 @@ def joint_deviation_square(
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
   asset: Entity = env.scene[asset_cfg.name]
-  default_joint_pos = asset.data.default_joint_pos
-  assert default_joint_pos is not None
-  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - default_joint_pos[:, asset_cfg.joint_ids]
+  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
   return torch.sum(torch.square(joint_error), dim=1)
 
 
@@ -188,9 +151,7 @@ def joint_deviation_l1(
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
 ) -> torch.Tensor:
   asset: Entity = env.scene[asset_cfg.name]
-  default_joint_pos = asset.data.default_joint_pos
-  assert default_joint_pos is not None
-  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - default_joint_pos[:, asset_cfg.joint_ids]
+  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
   return torch.sum(torch.abs(joint_error), dim=1)
 
 
@@ -224,16 +185,10 @@ def feet_orientation_contact(
   ).reshape(num_envs, num_feet, 3)
   orientation_error = torch.linalg.vector_norm(projected_gravity[:, :, :2], dim=-1)
 
-  force_history = contact_sensor.data.force_history
-  if force_history is not None:
-    in_contact = (
-      torch.max(torch.linalg.vector_norm(force_history, dim=-1), dim=2)[0]
-      > contact_force_threshold
-    )
-  else:
-    force = contact_sensor.data.force
-    assert force is not None
-    in_contact = torch.linalg.vector_norm(force, dim=-1) > contact_force_threshold
+  in_contact = (
+    torch.max(torch.linalg.vector_norm(contact_sensor.data.force_history, dim=-1), dim=2)[0]
+    > contact_force_threshold
+  )
 
   return torch.sum(orientation_error * in_contact.float(), dim=1)
 
@@ -258,16 +213,10 @@ def feet_at_plane(
     body_ids = list(body_ids)
 
   contact_sensor: ContactSensor = env.scene[contact_sensor_name]
-  force_history = contact_sensor.data.force_history
-  if force_history is not None:
-    is_contact = (
-      torch.max(torch.linalg.vector_norm(force_history, dim=-1), dim=2)[0]
-      > contact_force_threshold
-    )
-  else:
-    force = contact_sensor.data.force
-    assert force is not None
-    is_contact = torch.linalg.vector_norm(force, dim=-1) > contact_force_threshold
+  is_contact = (
+    torch.max(torch.linalg.vector_norm(contact_sensor.data.force_history, dim=-1), dim=2)[0]
+    > contact_force_threshold
+  )
 
   left_sensor: RayCastSensor = env.scene[left_height_scanner_name]
   right_sensor: RayCastSensor = env.scene[right_height_scanner_name]
@@ -361,10 +310,8 @@ def joint_vel_limits(
 ) -> torch.Tensor:
   """Penalize joint velocities if they cross soft limits.
 
-  Mirrors the original Isaac Lab ``joint_vel_limits``:
-  ``abs(joint_vel) - soft_joint_vel_limits * soft_ratio`` clipped to [0, 1].
-  In mjlab parkour G1, per-joint velocity limits are read directly from
-  actuator cfg metadata (``velocity_limit``).
+  Per-joint velocity limits are read from actuator cfg metadata
+  (``velocity_limit``). Excess is clipped to [0, 1] rad/s per joint.
   """
   asset: Entity = env.scene[asset_cfg.name]
 
@@ -427,12 +374,5 @@ def undesired_contacts(
   threshold: float,
 ) -> torch.Tensor:
   contact_sensor: ContactSensor = env.scene[sensor_name]
-  force_history = contact_sensor.data.force_history
-  if force_history is not None:
-    is_contact = torch.max(torch.linalg.vector_norm(force_history, dim=-1), dim=2)[0] > threshold
-  else:
-    force = contact_sensor.data.force
-    assert force is not None
-    is_contact = torch.linalg.vector_norm(force, dim=-1) > threshold
-
+  is_contact = torch.max(torch.linalg.vector_norm(contact_sensor.data.force_history, dim=-1), dim=2)[0] > threshold
   return torch.sum(is_contact.float(), dim=1)

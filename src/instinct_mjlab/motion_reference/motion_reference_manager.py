@@ -143,8 +143,10 @@ class MotionReferenceManager(Sensor):
 
         env_ids = self._ALL_INDICES[outdated_mask]
         self._update_buffers_impl(env_ids)
-        # Data refresh clock: only tracks when _data was last refilled.
-        # Keep _timestamp_last_update as keyframe logical clock.
+        # Align with InstinctLab SensorBase semantics: each data refresh updates
+        # the "last update" timestamp used by aiming-frame timing helpers.
+        self._timestamp_last_update[env_ids] = self._timestamp[env_ids]
+        # Data refresh clock for stale-data checks.
         self._data_timestamp_last_update[env_ids] = self._timestamp[env_ids]
         self._is_outdated[env_ids] = False
 
@@ -1125,9 +1127,9 @@ class MotionReferenceManager(Sensor):
                 root_axis_radius = max(root_scale * 0.08, 1.0e-4)
                 root_color = getattr(root_marker_cfg, "color", (1.0, 1.0, 1.0, 1.0))
                 axis_colors = (
-                    (float(root_color[0]), float(root_color[1]), float(root_color[2])),
-                    (float(root_color[0]), float(root_color[1]), float(root_color[2])),
-                    (float(root_color[0]), float(root_color[1]), float(root_color[2])),
+                    (1.0, 0.0, 0.0),  # X axis
+                    (0.0, 1.0, 0.0),  # Y axis
+                    (0.0, 0.0, 1.0),  # Z axis
                 )
                 for i, env_id in enumerate(env_ids_t):
                     frame_idx = int(aiming_frame_idx[i].item())
@@ -1160,9 +1162,9 @@ class MotionReferenceManager(Sensor):
                 rel_axis_radius = max(rel_scale * 0.08, 1.0e-4)
                 rel_color = getattr(rel_marker_cfg, "color", (1.0, 1.0, 1.0, 1.0))
                 rel_axis_colors = (
-                    (float(rel_color[0]), float(rel_color[1]), float(rel_color[2])),
-                    (float(rel_color[0]), float(rel_color[1]), float(rel_color[2])),
-                    (float(rel_color[0]), float(rel_color[1]), float(rel_color[2])),
+                    (1.0, 0.0, 0.0),  # X axis
+                    (0.0, 1.0, 0.0),  # Y axis
+                    (0.0, 0.0, 1.0),  # Z axis
                 )
                 relative_link_pos_w = self.reference_link_pos_relative_w[env_ids_t]
                 relative_link_quat_w = self.reference_link_quat_relative_w[env_ids_t]

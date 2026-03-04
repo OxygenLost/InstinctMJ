@@ -3,7 +3,7 @@ import os
 
 
 from instinct_mjlab.envs.mdp.observations.exteroception import visualizable_image
-from instinct_mjlab.utils.wrappers.instinct_rl import (
+from instinct_mjlab.rl import (
     InstinctRlActorCriticCfg,
     InstinctRlConv2dHeadCfg,
     InstinctRlEncoderActorCriticCfg,

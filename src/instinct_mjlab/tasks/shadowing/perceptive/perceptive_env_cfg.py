@@ -67,7 +67,7 @@ def get_motion_matched_subterrain_cfg(sub_terrains: dict[str, object]) -> Motion
 
 
 def _edit_perceptive_scene_spec(spec: mujoco.MjSpec) -> None:
-    """Apply skybox and terrain material to match the original InstinctLab scene look."""
+    """Apply skybox and terrain material to the scene spec."""
     skybox_texture_name = "perceptive_skybox"
     ground_texture_name = "perceptive_groundplane"
     ground_material_name = "perceptive_groundplane"
@@ -151,7 +151,14 @@ def _edit_perceptive_scene_spec(spec: mujoco.MjSpec) -> None:
         if parent is None:
             continue
         body_name = parent.name or ""
-        if body_name.startswith("robot_reference/"):
+        # Handle both direct entity names ("robot_reference/...") and nested
+        # names that include additional namespace prefixes (".../robot_reference/...").
+        is_reference_body = (
+            body_name == "robot_reference"
+            or body_name.startswith("robot_reference/")
+            or "/robot_reference/" in body_name
+        )
+        if is_reference_body:
             original_contype = int(getattr(geom, "contype", 1))
             original_conaffinity = int(getattr(geom, "conaffinity", 1))
             collision_enabled = (original_contype != 0) or (original_conaffinity != 0)
@@ -769,7 +776,7 @@ def make_events() -> dict[str, EventTermCfg]:
                 "randomize_pose_range": {
                     "x": (-0.15, 0.15),
                     "y": (-0.15, 0.15),
-                    "z": (-0.01, 0.01),
+                    "z": (0.0, 0.0),
                 },
                 # Velocity randomization (+-0.1 m/s linear, +-0.1 rad/s angular)
                 "randomize_velocity_range": {},

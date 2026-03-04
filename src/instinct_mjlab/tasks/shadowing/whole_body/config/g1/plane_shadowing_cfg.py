@@ -138,7 +138,7 @@ _hacked_selected_files_ = ["fightAndSports1_subject1_retargetted.npz"]
 # _hacked_selected_files_ = ["CMU/90/90_26_retargetted.npz"]
 
 MOTION_NAME = "LafanFight5Files"
-_path_ = str(_DATASETS_ROOT / "lafan1_gmr_unitree_g1_instinct")
+_path_ = os.path.expanduser("~/Xyk/Datasets/NoKov-Marslab-Motions-instinctnpz/20251016_diveroll4_single")
 _hacked_selected_files_ = [
     "fight1_subject2_retargetted.npz",
     "fight1_subject3_retargetted.npz",
@@ -149,7 +149,12 @@ _hacked_selected_files_ = [
 
 
 MOTION_NAME = "LafanFiltered"
-_path_ = str(_DATASETS_ROOT / "lafan1_gmr_unitree_g1_instinct")
+_path_ = os.path.expanduser(
+    os.environ.get(
+        "INSTINCT_WHOLEBODY_MOTION_PATH",
+        "~/Xyk/Datasets/NoKov-Marslab-Motions-instinctnpz/20251016_diveroll4_single",
+    )
+)
 _hacked_selected_files_ = [
     "aiming1_subject1_retargetted.npz",  # O
     "aiming1_subject4_retargetted.npz",  # O
@@ -399,7 +404,7 @@ def _make_scene_cfg(*, play: bool, motion_reference_cfg: MotionReferenceManagerC
         entities["robot_reference"] = deepcopy(G1_CFG)
 
     return SceneCfg(
-        num_envs=1 if play else 4096,
+        num_envs=1 if play else 2048,
         env_spacing=2.5 if play else 4.0,
         terrain=TerrainImporterCfg(terrain_type="plane"),
         entities=entities,
@@ -547,8 +552,7 @@ def _observations_cfg(link_of_interests: list[str]) -> dict[str, ObservationGrou
 
 
 def _rewards_cfg() -> dict[str, RewardTermCfg | None]:
-    # InstinctLab source inherits rewards from whole_body.shadowing_env_cfg.
-    # Keep the same inheritance behavior instead of redefining locally.
+    # Inherits rewards from whole_body.shadowing_env_cfg.
     return deepcopy(shadowing_cfg.shadowing_rewards_terms())
 
 
@@ -562,8 +566,6 @@ def _events_cfg() -> dict[str, EventTermCfg | None]:
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
                 "static_friction_range": (0.3, 1.6),
                 "dynamic_friction_range": (0.3, 1.2),
-                "restitution_range": (0.0, 0.5),
-                "num_buckets": 64,
             },
         ),
         "add_joint_default_pos": EventTermCfg(
@@ -831,7 +833,7 @@ def _viewer_cfg(play: bool) -> ViewerConfig:
     )
 
 
-def _apply_motion_buffer_curriculum(cfg: InstinctLabRLEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
+def _apply_motion_buffer_curriculum(cfg: ManagerBasedRlEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
     assert (
         len(list(motion_reference_cfg.motion_buffers.keys())) == 1
     ), "Only support single motion buffer for now"
@@ -853,7 +855,7 @@ def _apply_motion_buffer_curriculum(cfg: InstinctLabRLEnvCfg, motion_reference_c
         )
 
 
-def _apply_play_overrides(cfg: InstinctLabRLEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
+def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
     # spawn the robot randomly in the grid (instead of their terrain levels)
     cfg.scene.terrain.max_init_terrain_level = None
     # reduce the number of terrains to save memory
@@ -996,7 +998,7 @@ def g1_plane_shadowing_env_cfg(*, play: bool = False) -> ManagerBasedRlEnvCfg:
         decimation=4,
         episode_length_s=10.0,
     )
-    cfg.sim.njmax = 300
+    cfg.sim.njmax = 1200
     cfg.sim.nconmax = None
     cfg.sim.mujoco.timestep = 1.0 / 50.0 / cfg.decimation
 

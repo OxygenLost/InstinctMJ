@@ -59,7 +59,7 @@ _UNDESIRED_CONTACT_BODY_NAMES = (
 
 
 def _edit_beyondmimic_scene_spec(spec: mujoco.MjSpec) -> None:
-    """Apply skybox and ground material to match the original InstinctLab scene look."""
+    """Apply skybox and ground material to the scene spec."""
     skybox_texture_name = "beyondmimic_skybox"
     ground_texture_name = "beyondmimic_groundplane"
     ground_material_name = "beyondmimic_groundplane"
@@ -399,8 +399,6 @@ def make_beyondmimic_events() -> dict[str, EventTermCfg]:
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
                 "static_friction_range": (0.3, 1.6),
                 "dynamic_friction_range": (0.3, 1.2),
-                "restitution_range": (0.0, 0.5),
-                "num_buckets": 64,
             },
         ),
         "add_joint_default_pos": EventTermCfg(

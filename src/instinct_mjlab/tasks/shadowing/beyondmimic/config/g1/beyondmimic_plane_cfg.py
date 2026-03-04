@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
+from pathlib import Path
 
 import yaml
 
@@ -48,13 +49,23 @@ from instinct_mjlab.utils.motion_validation import resolve_datasets_root
 G1_CFG = G1_29DOF_TORSOBASE_POPSICLE_CFG
 _DATASETS_ROOT = resolve_datasets_root()
 _UNDESIRED_CONTACT_SENSOR_NAME = "undesired_contact_forces"
-_MOTION_DATASET_DIR = _DATASETS_ROOT / "lafan1_gmr_unitree_g1_instinct"
+_MOTION_DATASET_DIR = Path(
+    os.path.expanduser(
+        os.environ.get(
+            "INSTINCT_BEYONDMIMIC_MOTION_PATH",
+            str(_DATASETS_ROOT / "lafan1_gmr_unitree_g1_instinct"),
+        )
+    )
+)
 
 # Motion configuration
 MOTION_NAME = "LafanKungfu1"
 _hacked_selected_file_ = "fightAndSports1_subject1_retargetted.npz"
-MOTION_NAME = "LafanWalk1"
-_hacked_selected_file_ = "walk1_subject1_retargeted.npz"
+MOTION_NAME = "LafanSprint1"
+_hacked_selected_file_ = os.environ.get(
+    "INSTINCT_BEYONDMIMIC_SELECTED_FILE",
+    "sprint1_subject2_retargetted.npz",
+)
 
 with open(f"/tmp/{MOTION_NAME}.yaml", "w") as f:
     yaml.dump(
@@ -276,8 +287,7 @@ def _observations_cfg(link_of_interests: list[str]) -> dict[str, ObservationGrou
 
 
 def _rewards_cfg() -> dict[str, RewardTermCfg | None]:
-    # InstinctLab source inherits rewards from beyondmimic_env_cfg.
-    # Keep the same inheritance behavior instead of redefining locally.
+    # Inherits rewards from beyondmimic_env_cfg.
     return deepcopy(beyondmimic_cfg.make_beyondmimic_rewards())
 
 
@@ -291,8 +301,6 @@ def _events_cfg() -> dict[str, EventTermCfg | None]:
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
                 "static_friction_range": (0.3, 1.6),
                 "dynamic_friction_range": (0.3, 1.2),
-                "restitution_range": (0.0, 0.5),
-                "num_buckets": 64,
             },
         ),
         "add_joint_default_pos": EventTermCfg(

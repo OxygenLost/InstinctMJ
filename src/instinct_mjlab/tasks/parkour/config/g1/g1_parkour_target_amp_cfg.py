@@ -1,9 +1,6 @@
 """G1 parkour AMP task config factories.
 
-Mirrors the original InstinctLab ``g1_parkour_target_amp_cfg.py`` using
-mjlab-native factory functions.  Config classes (``G1ParkourRoughEnvCfg``,
-``G1ParkourEnvCfg``, etc.) are replaced by a single factory
-``instinct_g1_parkour_amp_final_cfg(play, shoe)`` that returns a fully-built
+Config is built via factory functions that return a fully-built
 ``ManagerBasedRlEnvCfg``.
 """
 
@@ -21,7 +18,6 @@ from mjlab.viewer.viewer_config import ViewerConfig
 from mjlab.tasks.tracking.config.g1.env_cfgs import unitree_g1_flat_tracking_env_cfg
 
 from instinct_mjlab.assets.unitree_g1 import (
-  G1_29DOF_INSTINCTLAB_JOINT_ORDER,
   G1_29Dof_TorsoBase_symmetric_augmentation_joint_mapping,
   G1_29Dof_TorsoBase_symmetric_augmentation_joint_reverse_buf,
   G1_MJCF_PATH,
@@ -63,8 +59,7 @@ _PARKOUR_FILTERED_MOTION_YAML = (
 
 
 # ---------------------------------------------------------------------------
-# Motion reference configs (mirrors InstinctLab AmassMotionCfg)
-# ---------------------------------------------------------------------------
+# Motion reference configs
 # ---------------------------------------------------------------------------
 
 
@@ -85,31 +80,22 @@ class AmassMotionCfg(AmassMotionCfgBase):
 
 def _make_motion_reference_cfg() -> MotionReferenceManagerCfg:
   """Build parkour motion reference manager config."""
-  # Convert InstinctLab symmetric augmentation joint mapping into the
-  # MuJoCo/MJCF joint index order used by mjlab entities.
+  # Use MJCF-native symmetric augmentation buffers directly.
   model = mujoco.MjModel.from_xml_path(G1_MJCF_PATH)
   mjlab_joint_order: list[str] = []
   for joint_id in range(model.njnt):
     if model.jnt_type[joint_id] == mujoco.mjtJoint.mjJNT_FREE:
       continue
     joint_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, joint_id)
-    assert joint_name is not None
+    if not joint_name:
+      continue
     mjlab_joint_order.append(joint_name)
 
-  instinct_joint_order = list(G1_29DOF_INSTINCTLAB_JOINT_ORDER)
-  instinct_name_to_idx = {name: idx for idx, name in enumerate(instinct_joint_order)}
-  mjlab_name_to_idx = {name: idx for idx, name in enumerate(mjlab_joint_order)}
+  symmetric_joint_mapping_mjlab = list(G1_29Dof_TorsoBase_symmetric_augmentation_joint_mapping)
+  symmetric_joint_reverse_buf_mjlab = list(G1_29Dof_TorsoBase_symmetric_augmentation_joint_reverse_buf)
 
-  symmetric_joint_mapping_mjlab: list[int] = []
-  symmetric_joint_reverse_buf_mjlab: list[int] = []
-  for joint_name in mjlab_joint_order:
-    inst_idx = instinct_name_to_idx[joint_name]
-    mirrored_inst_idx = G1_29Dof_TorsoBase_symmetric_augmentation_joint_mapping[inst_idx]
-    mirrored_joint_name = instinct_joint_order[mirrored_inst_idx]
-    symmetric_joint_mapping_mjlab.append(mjlab_name_to_idx[mirrored_joint_name])
-    symmetric_joint_reverse_buf_mjlab.append(
-      G1_29Dof_TorsoBase_symmetric_augmentation_joint_reverse_buf[inst_idx]
-    )
+  assert len(symmetric_joint_mapping_mjlab) == len(mjlab_joint_order)
+  assert len(symmetric_joint_reverse_buf_mjlab) == len(mjlab_joint_order)
 
   return MotionReferenceManagerCfg(
     name="motion_reference",
@@ -162,7 +148,6 @@ def _parkour_g1_with_shoe_spec() -> mujoco.MjSpec:
   """Build MjSpec for the G1 robot with shoe mesh."""
   spec = mujoco.MjSpec.from_file(str(_PARKOUR_G1_WITH_SHOE_MJCF_PATH))
   spec.assets = get_g1_assets(spec.meshdir)
-  # InstinctLab shoe URDF does not include robot-mounted lights.
   # Remove embedded per-robot lights to avoid localized over-bright spots.
   for body in spec.bodies:
     for light in tuple(body.lights):
@@ -171,15 +156,11 @@ def _parkour_g1_with_shoe_spec() -> mujoco.MjSpec:
 
 
 def _apply_shoe_config(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Apply shoe-specific adjustments to a parkour env cfg (in-place).
-
-  Mirrors the ``ShoeConfigMixin.apply_shoe_config()`` from the original
-  InstinctLab ``g1_parkour_target_amp_cfg.py``.
-  """
+  """Apply shoe-specific adjustments to a parkour env cfg (in-place)."""
   # Replace robot spec with shoe variant
   robot_cfg_with_shoe = copy.deepcopy(cfg.scene.entities["robot"])
   robot_cfg_with_shoe.spec_fn = _parkour_g1_with_shoe_spec
-  # Keep the URDF-authored collision setup as-is to match InstinctLab semantics.
+  # Keep the URDF-authored collision setup as-is.
   # Even though shoe foot collision geoms now carry explicit names, we still
   # avoid reapplying asset-zoo collision overrides for parity.
   robot_cfg_with_shoe.collisions = tuple()
@@ -197,11 +178,7 @@ def _apply_shoe_config(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Apply play-mode-specific overrides to a parkour env cfg (in-place).
-
-  Mirrors ``G1ParkourRoughEnvCfg_PLAY.__post_init__`` from the original
-  InstinctLab ``g1_parkour_target_amp_cfg.py``.
-  """
+  """Apply play-mode-specific overrides to a parkour env cfg (in-place)."""
   # Viewer
   cfg.viewer = ViewerConfig(
     lookat=(0.0, 0.75, 0.0),
@@ -223,31 +200,23 @@ def _set_world_free_viewer(cfg: ManagerBasedRlEnvCfg) -> None:
 
 
 # ---------------------------------------------------------------------------
-# G1-specific actuator setup (from original env_cfgs.py)
+# G1-specific actuator setup
 # ---------------------------------------------------------------------------
 
 
 def _set_parkour_actuators(cfg: ManagerBasedRlEnvCfg) -> None:
-  """Set G1-specific actuators and action scale for parkour (in-place).
-
-  Mirrors the original InstinctLab ``G1ParkourRoughEnvCfg.__post_init__``
-  where ``beyondmimic_g1_29dof_delayed_actuator_cfgs`` and
-  ``beyondmimic_action_scale`` are applied.
-  """
+  """Set G1-specific actuators and action scale for parkour (in-place)."""
   robot_cfg = cfg.scene.entities["robot"]
-  assert robot_cfg.articulation is not None
   robot_cfg.articulation.actuators = copy.deepcopy(
     beyondmimic_g1_29dof_delayed_actuator_cfgs
   )
 
-  joint_pos_action = cfg.actions["joint_pos"]
-  assert isinstance(joint_pos_action, JointPositionActionCfg)
-  # Keep direct joint readout order from entity/action pipeline.
+  joint_pos_action: JointPositionActionCfg = cfg.actions["joint_pos"]
   joint_pos_action.scale = copy.deepcopy(beyondmimic_action_scale)
 
 
 # ---------------------------------------------------------------------------
-# Base parkour env builder (merges original env_cfgs.py logic)
+# Base parkour env builder
 # ---------------------------------------------------------------------------
 
 
@@ -258,25 +227,18 @@ def instinct_g1_parkour_amp_env_cfg(
 ) -> ManagerBasedRlEnvCfg:
   """Build the base G1 parkour AMP environment configuration.
 
-  Mirrors the original InstinctLab ``G1ParkourRoughEnvCfg`` assembly:
-  starts from the tracking base, then applies parkour-specific MDP
-  settings (terrain, sensors, observations, rewards, etc.) and
-  G1-specific actuators.
-
   Args:
     play: If True, apply play-mode overrides (fewer envs, relaxed
       termination, etc.).
-    shoe: If True, apply shoe-specific adjustments (default is True,
-      matching the original ``G1ParkourEnvCfg`` behavior expected by
-      parkour task entry points).
+    shoe: If True, apply shoe-specific adjustments (default is True).
 
   Returns:
     A ``ManagerBasedRlEnvCfg`` instance with parkour settings applied.
   """
   # Scene settings (start from tracking base with G1 robot)
   cfg = unitree_g1_flat_tracking_env_cfg(play=play, has_state_estimation=True)
+  cfg.monitors = {}
   _set_world_free_viewer(cfg)
-  # Match InstinctLab parkour init height (G1_CFG.init_state.pos = (0, 0, 0.9)).
   cfg.scene.entities["robot"].init_state.pos = (0.0, 0.0, 0.9)
 
   # Basic settings
@@ -300,14 +262,9 @@ def instinct_g1_parkour_amp_env_cfg(
   set_parkour_terminations(cfg)
   set_parkour_events(cfg)
 
-  # Apply shoe-specific adjustments (matches original G1ParkourEnvCfg).
   if shoe:
     _apply_shoe_config(cfg)
 
-  # general settings
-  # simulation settings
-  # update sensor update periods
-  # lights
   if play:
     set_parkour_play_overrides(cfg)
   return cfg

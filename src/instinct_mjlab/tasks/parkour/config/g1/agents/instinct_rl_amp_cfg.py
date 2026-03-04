@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from instinct_mjlab.utils.wrappers.instinct_rl import (
+from instinct_mjlab.rl import (
     InstinctRlConv2dHeadCfg,
     InstinctRlEncoderMoEActorCriticCfg,
     InstinctRlOnPolicyRunnerCfg,

@@ -41,9 +41,6 @@ def feet_air_time_positive_biped(
   contact_sensor: ContactSensor = env.scene[sensor_name]
   air_time = contact_sensor.data.current_air_time
   contact_time = contact_sensor.data.current_contact_time
-  assert air_time is not None
-  assert contact_time is not None
-
   # compute the reward
   in_contact = contact_time > 0.0
   in_mode_time = torch.where(in_contact, contact_time, air_time)
@@ -90,12 +87,7 @@ def stand_still(
   asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
   asset: Entity = env.scene[asset_cfg.name]
-  default_joint_pos = asset.data.default_joint_pos
-  assert default_joint_pos is not None
-  dof_error = torch.sum(
-    torch.abs(asset.data.joint_pos[:, asset_cfg.joint_ids] - default_joint_pos[:, asset_cfg.joint_ids]),
-    dim=1,
-  )
+  dof_error = torch.sum(torch.abs(asset.data.joint_pos - asset.data.default_joint_pos), dim=1)
 
   return (
     dof_error
@@ -111,17 +103,11 @@ def feet_slide(
   threshold: float = 0.1,
   ang_vel_penalty: bool = False,
 ) -> torch.Tensor:
-  """Penalize body sliding while in contact (InstinctLab-equivalent)."""
+  """Penalize body sliding while in contact."""
   asset: Entity = env.scene[asset_cfg.name]
   sensor: ContactSensor = env.scene[sensor_name]
 
-  force_history = sensor.data.force_history
-  if force_history is not None:
-    in_contact = torch.max(torch.linalg.vector_norm(force_history, dim=-1), dim=2)[0] > threshold
-  else:
-    force = sensor.data.force
-    assert force is not None
-    in_contact = torch.linalg.vector_norm(force, dim=-1) > threshold
+  in_contact = torch.max(torch.linalg.vector_norm(sensor.data.force_history, dim=-1), dim=2)[0] > threshold
 
   body_vel = asset.data.body_link_lin_vel_w[:, asset_cfg.body_ids, :2]
   reward = torch.sum(torch.norm(body_vel, dim=-1) * in_contact.float(), dim=1)
@@ -137,9 +123,7 @@ def joint_deviation_l1(
 ) -> torch.Tensor:
   """Penalize absolute deviation from default joint pose."""
   asset: Entity = env.scene[asset_cfg.name]
-  default_joint_pos = asset.data.default_joint_pos
-  assert default_joint_pos is not None
-  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - default_joint_pos[:, asset_cfg.joint_ids]
+  joint_error = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
   return torch.sum(torch.abs(joint_error), dim=1)
 
 

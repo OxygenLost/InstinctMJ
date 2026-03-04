@@ -14,8 +14,6 @@ class FiledTerrainGeneratorCfg(TerrainGeneratorCfgBase):
     """Optional generator-wide vertical scale propagated to compatible sub-terrains."""
     slope_threshold: float | None = None
     """Optional generator-wide slope threshold propagated to compatible sub-terrains."""
-    use_cache: bool = False
-    """Kept for InstinctLab config compatibility. Terrain caching is currently handled by submodules."""
     hfield_resolution: float | None = None
     """Sampling resolution (meters) for filed-generator mesh->hfield conversion.
 

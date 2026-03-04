@@ -42,7 +42,7 @@ from instinct_mjlab.terrains.height_field import PerlinPlaneTerrainCfg
 
 
 def _edit_shadowing_scene_spec(spec: mujoco.MjSpec) -> None:
-    """Apply skybox and ground material to match the original InstinctLab scene look."""
+    """Apply skybox and ground material to the scene spec."""
     skybox_texture_name = "shadowing_skybox"
     ground_texture_name = "shadowing_groundplane"
     ground_material_name = "shadowing_groundplane"
@@ -427,8 +427,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
                 "static_friction_range": (0.3, 1.6),
                 "dynamic_friction_range": (0.3, 1.2),
-                "restitution_range": (0.0, 0.5),
-                "num_buckets": 64,
             },
         ),
 
@@ -556,6 +554,7 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "reference_cfg": SceneEntityCfg("motion_reference"),
                 "projected_gravity_threshold": 0.8,  # distance on z-axis of projected gravity
                 "check_at_keyframe_threshold": -1,
+                "z_only": False,  # find out useful if not z_only but beyondmimic default is z_only
                 "print_reason": False,
             },
         ),
@@ -695,7 +694,7 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
 class ShadowingEnvCfg(InstinctLabRLEnvCfg):
     """Configuration for the shadowing environment."""
 
-    scene: ShadowingSceneCfg = field(default_factory=lambda: ShadowingSceneCfg(num_envs=4096))
+    scene: ShadowingSceneCfg = field(default_factory=lambda: ShadowingSceneCfg(num_envs=2048))
     commands: dict = field(default_factory=make_commands)
     actions: dict = field(default_factory=make_actions)
     observations: dict = field(default_factory=make_observations)

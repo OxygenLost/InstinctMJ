@@ -19,6 +19,7 @@ def illegal_contact(
 ) -> torch.Tensor:
   """Terminate when contact force exceeds threshold."""
   contact_sensor: ContactSensor = env.scene[sensor_name]
-  force = contact_sensor.data.force
-  assert force is not None
-  return torch.any(torch.linalg.vector_norm(force, dim=-1) > threshold, dim=1)
+  return torch.any(
+    torch.max(torch.linalg.vector_norm(contact_sensor.data.force_history, dim=-1), dim=2)[0] > threshold,
+    dim=1,
+  )

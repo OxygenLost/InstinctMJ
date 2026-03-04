@@ -342,7 +342,7 @@ class PoseVelocityCommand(CommandTerm):
             if np.linalg.norm(base_pos_ws[batch]) < 1e-6:
                 continue
 
-            # 1. Draw target position as red cylinder (InstinctLab marker semantics)
+            # 1. Draw target position as red cylinder
             goal_pos = pos_commands_w[batch]
             goal_start = goal_pos.copy()
             goal_end = goal_pos.copy()

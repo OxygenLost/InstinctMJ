@@ -20,16 +20,12 @@ def randomize_rigid_body_material(
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
   static_friction_range: tuple[float, float] = (0.3, 1.0),
   dynamic_friction_range: tuple[float, float] = (0.3, 1.0),
-  restitution_range: tuple[float, float] = (0.0, 0.0),
-  num_buckets: int = 64,
   make_consistent: bool = True,
 ) -> None:
   slide_friction_range = (
     min(static_friction_range[0], dynamic_friction_range[0]),
     max(static_friction_range[1], dynamic_friction_range[1]),
   )
-  # MuJoCo does not provide a direct restitution coefficient in geom_friction.
-  del num_buckets, restitution_range
   envs_mdp.dr.geom_friction(
     env=env,
     env_ids=env_ids,
@@ -48,10 +44,7 @@ def push_by_setting_velocity_without_stand(
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
   velocity_threshold: float = 0.15,
 ) -> None:
-  """Push the asset by setting root velocity. No push when standing still.
-
-  Mirrors the original InstinctLab ``push_by_setting_velocity_without_stand``.
-  """
+  """Push the asset by setting root velocity. No push when standing still."""
   asset: Entity = env.scene[asset_cfg.name]
   vel_w = asset.data.root_link_vel_w[env_ids]
 

@@ -1,4 +1,4 @@
-"""Register migrated InstinctLab parkour G1 tasks."""
+"""Register instinct_mjlab parkour G1 tasks."""
 
 # Copyright (c) 2022-2025, The Isaac Lab Project Developers.
 # All rights reserved.

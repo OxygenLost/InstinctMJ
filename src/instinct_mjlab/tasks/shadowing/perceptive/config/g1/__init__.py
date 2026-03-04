@@ -1,4 +1,4 @@
-"""Register migrated InstinctLab perceptive G1 tasks."""
+"""Register instinct_mjlab perceptive G1 tasks."""
 
 from instinct_mjlab.tasks.registry import register_instinct_task
 

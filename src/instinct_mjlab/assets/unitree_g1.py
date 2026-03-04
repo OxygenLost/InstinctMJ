@@ -20,8 +20,8 @@ from instinct_mjlab.actuators import (
 
 __file_dir__ = os.path.dirname(os.path.realpath(__file__))
 
-# MJCF (XML) path – uses the local 29-dof torso-base popsicle model,
-# matching InstinctLab's G1_29DOF_TORSOBASE_POPSICLE_CFG.
+# MJCF (XML) path – uses the local 29-dof torso-base popsicle model.
+# Joint-related semantics in this module follow the MuJoCo/MJCF native order.
 G1_MJCF_PATH: str = os.path.join(
   __file_dir__, "resources/unitree_g1/xml/g1_29dof_torsobase_popsicle.xml"
 )
@@ -30,74 +30,48 @@ G1_MESHES_DIR: str = os.path.join(__file_dir__, "resources/unitree_g1/meshes")
 """
 joint name order:
 [
-    'left_shoulder_pitch_joint',
-    'right_shoulder_pitch_joint',
     'waist_pitch_joint',
-    'left_shoulder_roll_joint',
-    'right_shoulder_roll_joint',
     'waist_roll_joint',
-    'left_shoulder_yaw_joint',
-    'right_shoulder_yaw_joint',
     'waist_yaw_joint',
-    'left_elbow_joint',
-    'right_elbow_joint',
     'left_hip_pitch_joint',
-    'right_hip_pitch_joint',
-    'left_wrist_roll_joint',
-    'right_wrist_roll_joint',
     'left_hip_roll_joint',
-    'right_hip_roll_joint',
-    'left_wrist_pitch_joint',
-    'right_wrist_pitch_joint',
     'left_hip_yaw_joint',
-    'right_hip_yaw_joint',
-    'left_wrist_yaw_joint',
-    'right_wrist_yaw_joint',
     'left_knee_joint',
-    'right_knee_joint',
     'left_ankle_pitch_joint',
-    'right_ankle_pitch_joint',
     'left_ankle_roll_joint',
+    'right_hip_pitch_joint',
+    'right_hip_roll_joint',
+    'right_hip_yaw_joint',
+    'right_knee_joint',
+    'right_ankle_pitch_joint',
     'right_ankle_roll_joint',
+    'left_shoulder_pitch_joint',
+    'left_shoulder_roll_joint',
+    'left_shoulder_yaw_joint',
+    'left_elbow_joint',
+    'left_wrist_roll_joint',
+    'left_wrist_pitch_joint',
+    'left_wrist_yaw_joint',
+    'right_shoulder_pitch_joint',
+    'right_shoulder_roll_joint',
+    'right_shoulder_yaw_joint',
+    'right_elbow_joint',
+    'right_wrist_roll_joint',
+    'right_wrist_pitch_joint',
+    'right_wrist_yaw_joint',
 ]
 """
 
-G1_29DOF_INSTINCTLAB_JOINT_ORDER: tuple[str, ...] = (
-  "left_shoulder_pitch_joint",
-  "right_shoulder_pitch_joint",
-  "waist_pitch_joint",
-  "left_shoulder_roll_joint",
-  "right_shoulder_roll_joint",
-  "waist_roll_joint",
-  "left_shoulder_yaw_joint",
-  "right_shoulder_yaw_joint",
-  "waist_yaw_joint",
-  "left_elbow_joint",
-  "right_elbow_joint",
-  "left_hip_pitch_joint",
-  "right_hip_pitch_joint",
-  "left_wrist_roll_joint",
-  "right_wrist_roll_joint",
-  "left_hip_roll_joint",
-  "right_hip_roll_joint",
-  "left_wrist_pitch_joint",
-  "right_wrist_pitch_joint",
-  "left_hip_yaw_joint",
-  "right_hip_yaw_joint",
-  "left_wrist_yaw_joint",
-  "right_wrist_yaw_joint",
-  "left_knee_joint",
-  "right_knee_joint",
-  "left_ankle_pitch_joint",
-  "right_ankle_pitch_joint",
-  "left_ankle_roll_joint",
-  "right_ankle_roll_joint",
-)
+# NOTE:
+# Joint-order dependent buffers below follow MuJoCo/MJCF native joint order.
+# This keeps all mjlab tensors and motion-reference augmentation in one order.
 
 def get_g1_assets(meshdir: str | None) -> dict[str, bytes]:
   """Load local G1 mesh assets keyed with MuJoCo meshdir prefix."""
   assets: dict[str, bytes] = {}
-  update_assets(assets, G1_MESHES_DIR, meshdir)
+  # Normalize meshdir so attached specs don't get asset keys like "../meshes//robot/...".
+  normalized_meshdir = meshdir.rstrip("/") if meshdir else None
+  update_assets(assets, G1_MESHES_DIR, normalized_meshdir)
   return assets
 
 
@@ -460,67 +434,67 @@ G1_29DOF_TORSOBASE_POPSICLE_CFG = EntityCfg(
 
 
 G1_29Dof_TorsoBase_symmetric_augmentation_joint_mapping = [
+  0,  # waist pitch
   1,
-  0,
-  2,  # waist pitch
-  4,
-  3,
-  5,  # waist roll
-  7,
-  6,
-  8,  # waist yaw
-  10,
-  9,
-  12,
-  11,
-  14,
-  13,
-  16,
-  15,
-  18,
-  17,
-  20,
-  19,
-  22,
-  21,
-  24,
-  23,
-  26,
-  25,
-  28,
-  27,
+  2,  # waist roll / yaw
+  9,  # left hip pitch -> right hip pitch
+  10,  # left hip roll -> right hip roll
+  11,  # left hip yaw -> right hip yaw
+  12,  # left knee -> right knee
+  13,  # left ankle pitch -> right ankle pitch
+  14,  # left ankle roll -> right ankle roll
+  3,  # right hip pitch -> left hip pitch
+  4,  # right hip roll -> left hip roll
+  5,  # right hip yaw -> left hip yaw
+  6,  # right knee -> left knee
+  7,  # right ankle pitch -> left ankle pitch
+  8,  # right ankle roll -> left ankle roll
+  22,  # left shoulder pitch -> right shoulder pitch
+  23,  # left shoulder roll -> right shoulder roll
+  24,  # left shoulder yaw -> right shoulder yaw
+  25,  # left elbow -> right elbow
+  26,  # left wrist roll -> right wrist roll
+  27,  # left wrist pitch -> right wrist pitch
+  28,  # left wrist yaw -> right wrist yaw
+  15,  # right shoulder pitch -> left shoulder pitch
+  16,  # right shoulder roll -> left shoulder roll
+  17,  # right shoulder yaw -> left shoulder yaw
+  18,  # right elbow -> left elbow
+  19,  # right wrist roll -> left wrist roll
+  20,  # right wrist pitch -> left wrist pitch
+  21,  # right wrist yaw -> left wrist yaw
 ]
 
 G1_29Dof_TorsoBase_symmetric_augmentation_joint_reverse_buf = [
-  1,
-  1,
   1,  # waist pitch
-  -1,
-  -1,  # shoulder roll
   -1,  # waist roll
-  -1,
-  -1,  # shoulder yaw
   -1,  # waist yaw
-  1,
-  1,
-  1,
-  1,
-  -1,
-  -1,  # wrist roll
-  -1,
-  -1,  # hip roll
-  1,
-  1,  # wrist pitch
-  -1,
-  -1,  # hip yaw
-  -1,
-  -1,  # wrist yaw
-  1,
-  1,
-  1,
-  1,
-  -1,
-  -1,  # ankle roll
+  1,  # left hip pitch
+  -1,  # left hip roll
+  -1,  # left hip yaw
+  1,  # left knee
+  1,  # left ankle pitch
+  -1,  # left ankle roll
+  1,  # right hip pitch
+  -1,  # right hip roll
+  -1,  # right hip yaw
+  1,  # right knee
+  1,  # right ankle pitch
+  -1,  # right ankle roll
+  1,  # left shoulder pitch
+  -1,  # left shoulder roll
+  -1,  # left shoulder yaw
+  1,  # left elbow
+  -1,  # left wrist roll
+  1,  # left wrist pitch
+  -1,  # left wrist yaw
+  1,  # right shoulder pitch
+  -1,  # right shoulder roll
+  -1,  # right shoulder yaw
+  1,  # right elbow
+  -1,  # right wrist roll
+  1,  # right wrist pitch
+  -1,  # right wrist yaw
 ]
 
 
@@ -556,7 +530,6 @@ __all__ = [
   "GEARS_7520_22",
   "G1_29DOF_TORSOBASE_CFG",
   "G1_29DOF_TORSOBASE_CLOG_CFG",
-  "G1_29DOF_INSTINCTLAB_JOINT_ORDER",
   "G1_29DOF_TORSOBASE_POPSICLE_CFG",
   "G1_MESHES_DIR",
   "G1_MJCF_PATH",

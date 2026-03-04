@@ -38,7 +38,6 @@ _BASE_CONTACT_SENSOR_NAME = "base_contact_forces"
 
 def _make_robot_cfg():
   robot_cfg = copy.deepcopy(G1_CFG)
-  assert robot_cfg.articulation is not None, "Robot articulation must be configured for locomotion task."
   robot_cfg.articulation.actuators = copy.deepcopy(beyondmimic_g1_29dof_actuator_cfgs)
   return robot_cfg
 
@@ -204,10 +203,7 @@ def _rewards_cfg() -> dict[str, RewTerm]:
       func=instinct_mdp.contact_slide,
       weight=-0.1,
       params={
-        "sensor_cfg": SceneEntityCfg(
-          _FEET_CONTACT_SENSOR_NAME,
-          body_names=("left_ankle_roll_link", "right_ankle_roll_link"),
-        ),
+        "sensor_cfg": SceneEntityCfg(_FEET_CONTACT_SENSOR_NAME),
         "asset_cfg": SceneEntityCfg(
           "robot",
           body_names=("left_ankle_roll_link", "right_ankle_roll_link"),
@@ -303,8 +299,6 @@ def _events_cfg() -> dict[str, Event]:
         "asset_cfg": SceneEntityCfg("robot", geom_names=(".*",)),
         "static_friction_range": (0.25, 0.8),
         "dynamic_friction_range": (0.2, 0.6),
-        "restitution_range": (0.0, 0.8),
-        "num_buckets": 64,
       },
     ),
     "add_base_mass": Event(
@@ -440,6 +434,7 @@ def instinct_g1_locomotion_flat_env_cfg(*, play: bool = False) -> ManagerBasedRl
     decimation=4,
     episode_length_s=20.0,
   )
+  cfg.monitors = {}
   cfg.sim.njmax = 300
   _apply_post_init_overrides(cfg, play=play)
   return cfg

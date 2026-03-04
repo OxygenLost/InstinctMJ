@@ -324,7 +324,7 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
     print("[INFO] Native viewer enabled during training.")
 
   runner_cls = load_runner_cls(task_id) or OnPolicyRunner
-  agent_cfg_dict = asdict(cfg.agent)
+  agent_cfg_dict = cfg.agent.to_dict() if hasattr(cfg.agent, "to_dict") else asdict(cfg.agent)
   obs_format = vec_env.get_obs_format()
   prepare_distillation_algorithm_cfg(
     agent_cfg=agent_cfg_dict,

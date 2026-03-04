@@ -1,4 +1,4 @@
-"""Task-specific MDP utilities for migrated Instinct tasks."""
+"""Task-specific MDP utilities for instinct_mjlab tasks."""
 
 from .observations import (
   PerceptiveRaycastNoised,
