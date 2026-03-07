@@ -1,6 +1,6 @@
-# Instinct_mjlab
+# Instinct_MJ
 
-`Instinct_mjlab` ports InstinctLab tasks to `mjlab` and runs training/playback with `instinct_rl`.
+`Instinct_MJ` ports InstinctLab tasks to `mjlab` and runs training/playback with `instinct_rl`.
 
 ## Reference to Original InstinctLab
 
@@ -29,13 +29,13 @@ cd ~/Project-Instinct
 git clone https://github.com/mujocolab/mjlab.git
 git clone https://github.com/project-instinct/instinct_rl.git
 # If you do not already have this repository locally:
-git clone <your-instinct-mjlab-repo-url> Instinct_mjlab
+git clone <your-instinct-mj-repo-url> Instinct_MJ
 ```
 
-Then install from `Instinct_mjlab`:
+Then install from `Instinct_MJ`:
 
 ```bash
-cd Instinct_mjlab
+cd Instinct_MJ
 uv sync
 ```
 
@@ -94,9 +94,9 @@ instinct-play Instinct-Parkour-Target-Amp-G1-Play-v0 --load-run <run_name> --exp
 Module form (if console scripts are not available):
 
 ```bash
-python -m instinct_mjlab.scripts.instinct_rl.train Instinct-Locomotion-Flat-G1-v0
-python -m instinct_mjlab.scripts.instinct_rl.play Instinct-Locomotion-Flat-G1-Play-v0 --load-run <run_name>
-python -m instinct_mjlab.scripts.list_envs
+python -m instinct_mj.scripts.instinct_rl.train Instinct-Locomotion-Flat-G1-v0
+python -m instinct_mj.scripts.instinct_rl.play Instinct-Locomotion-Flat-G1-Play-v0 --load-run <run_name>
+python -m instinct_mj.scripts.list_envs
 ```
 
 ## Data and Logs
@@ -107,5 +107,5 @@ python -m instinct_mjlab.scripts.list_envs
 
 ## Task Documentation
 
-- Shadowing: `src/instinct_mjlab/tasks/shadowing/README.md`
-- Parkour: `src/instinct_mjlab/tasks/parkour/README.md`
+- Shadowing: `src/instinct_mj/tasks/shadowing/README.md`
+- Parkour: `src/instinct_mj/tasks/parkour/README.md`
