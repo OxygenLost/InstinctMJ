@@ -1,58 +1,24 @@
 # Instinct_MJ
 
-`Instinct_MJ` ports InstinctLab tasks to `mjlab` and runs training/playback with `instinct_rl`.
+[![mjlab](https://img.shields.io/badge/framework-mjlab-4C7AF2.svg)](https://github.com/mujocolab/mjlab)
+[![MuJoCo](https://img.shields.io/badge/simulator-MuJoCo-silver.svg)](https://mujoco.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://docs.python.org/3/)
+[![Platform](https://img.shields.io/badge/platform-linux--x86__64-orange.svg)](https://releases.ubuntu.com/)
+[![instinct_rl](https://img.shields.io/badge/training-instinct__rl-brightgreen.svg)](https://github.com/project-instinct/instinct_rl)
 
-## Reference to Original InstinctLab
+## Overview
 
-- InstinctLab repo: `https://github.com/project-instinct/instinctlab`
-- Original root README: `https://github.com/project-instinct/instinctlab/blob/main/README.md`
-- Original tasks root: `source/instinctlab/instinctlab/tasks`
-- Local mirror in this workspace: `../InstinctLab`
-- Local tasks root in this workspace: `../InstinctLab/source/instinctlab/instinctlab/tasks`
+`Instinct_MJ` is a `mjlab`-native port of InstinctLab tasks for humanoid whole-body reinforcement learning on MuJoCo.
+It keeps task semantics aligned with InstinctLab while expressing environments, managers, scenes, and task registration in native `mjlab` style so the package plugs directly into `instinct_rl`.
 
-## Prerequisites
+**Key Features:**
 
-- Python `>=3.10,<3.14`
-- Linux + NVIDIA GPU (current training pipeline requires CUDA)
-- Source checkouts of both:
-  - `mjlab`
-  - `instinct_rl`
+- `Behavior-preserving migration` Ports InstinctLab locomotion, shadowing, perceptive, and parkour tasks with matching task IDs and training workflow.
+- `mjlab-native integration` Uses `mjlab` task registration, manager configs, scene wiring, and MuJoCo assets instead of compatibility shims.
+- `instinct_rl workflow` Supports the same train / play / export loop used by the Project-Instinct ecosystem.
+- `Installable task package` Registers tasks through the `mjlab.tasks` entry-point so environments are discoverable after editable install.
 
-## Installation
-
-Clone required source repositories as sibling directories:
-
-```bash
-mkdir -p ~/Project-Instinct
-cd ~/Project-Instinct
-
-git clone https://github.com/mujocolab/mjlab.git
-git clone https://github.com/project-instinct/instinct_rl.git
-# If you do not already have this repository locally:
-git clone <your-instinct-mj-repo-url> Instinct_MJ
-```
-
-Then install from `Instinct_MJ`:
-
-```bash
-cd Instinct_MJ
-uv sync
-```
-
-If you prefer `pip`:
-
-```bash
-pip install -e ../mjlab
-pip install -e ../instinct_rl
-pip install -e .
-```
-
-## List Available Tasks
-
-```bash
-instinct-list-envs
-instinct-list-envs shadowing
-```
+## Task Suite
 
 Registered task IDs:
 
@@ -69,7 +35,42 @@ Registered task IDs:
 - `Instinct-Parkour-Target-Amp-G1-v0`
 - `Instinct-Parkour-Target-Amp-G1-Play-v0`
 
-## Train and Play
+Use the CLI to inspect the full list at any time:
+
+```bash
+instinct-list-envs
+instinct-list-envs shadowing
+```
+
+## Installation
+
+Clone the required repositories as sibling directories:
+
+```bash
+mkdir -p ~/Project-Instinct
+cd ~/Project-Instinct
+
+git clone https://github.com/mujocolab/mjlab.git
+git clone https://github.com/project-instinct/instinct_rl.git
+git clone https://github.com/cmjang/Instinct_MJ.git
+```
+
+Install with `uv`:
+
+```bash
+cd Instinct_MJ
+uv sync
+```
+
+Or install editable packages with `pip`:
+
+```bash
+pip install -e ../mjlab
+pip install -e ../instinct_rl
+pip install -e .
+```
+
+## Quick Start
 
 Train:
 
@@ -85,13 +86,13 @@ instinct-play Instinct-Locomotion-Flat-G1-Play-v0 --load-run <run_name>
 instinct-play Instinct-Perceptive-Shadowing-G1-Play-v0 --load-run <run_name>
 ```
 
-Export ONNX (Parkour):
+Export ONNX for parkour:
 
 ```bash
 instinct-play Instinct-Parkour-Target-Amp-G1-Play-v0 --load-run <run_name> --export-onnx
 ```
 
-Module form (if console scripts are not available):
+Module form is also available when console scripts are not on `PATH`:
 
 ```bash
 python -m instinct_mj.scripts.instinct_rl.train Instinct-Locomotion-Flat-G1-v0
@@ -99,13 +100,32 @@ python -m instinct_mj.scripts.instinct_rl.play Instinct-Locomotion-Flat-G1-Play-
 python -m instinct_mj.scripts.list_envs
 ```
 
-## Data and Logs
+## Repository Layout
+
+- `src/instinct_mj/tasks` — task registration and family-specific configs.
+- `src/instinct_mj/envs` — environment wrappers, manager extensions, and shared MDP terms.
+- `src/instinct_mj/motion_reference` — motion data loaders, buffers, and reference managers.
+- `src/instinct_mj/assets` — MuJoCo robot assets and resource files.
+- `src/instinct_mj/scripts` — train, play, visualization, and data-processing entry points.
+
+## Data and Outputs
 
 - Override dataset root with `INSTINCT_DATASETS_ROOT` when needed.
-- Training logs: `logs/instinct_rl/<experiment_name>/<timestamp_run>/`
-- Play videos: under `videos/play/` in the selected run directory.
+- Training logs are written to `logs/instinct_rl/<experiment_name>/<timestamp_run>/`.
+- Play videos are saved under `videos/play/` in the selected run directory.
+
+## Relationship to InstinctLab
+
+`Instinct_MJ` is the MuJoCo / `mjlab` counterpart to InstinctLab in the Project-Instinct ecosystem.
+
+Reference links:
+
+- Original repository: `https://github.com/project-instinct/InstinctLab`
+- Original README: `https://github.com/project-instinct/InstinctLab/blob/main/README.md`
+- Local reference in this workspace: `../InstinctLab`
 
 ## Task Documentation
 
 - Shadowing: `src/instinct_mj/tasks/shadowing/README.md`
+- BeyondMimic: `src/instinct_mj/tasks/shadowing/beyondmimic/README.md`
 - Parkour: `src/instinct_mj/tasks/parkour/README.md`
