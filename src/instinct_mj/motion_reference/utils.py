@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import numpy as np
-import torch
 from typing import TYPE_CHECKING, Literal
 
-from mjlab.utils.lab_api import math as math_utils
+import numpy as np
+import torch
 from mjlab.envs import ManagerBasedRlEnv
 from mjlab.managers import SceneEntityCfg
+from mjlab.utils.lab_api import math as math_utils
 
 from instinct_mj.utils.math import quat_angular_velocity, quat_slerp_batch
 

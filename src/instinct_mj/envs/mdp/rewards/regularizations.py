@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.actuator import (
     BuiltinPositionActuator,
     BuiltinVelocityActuator,
@@ -136,9 +136,7 @@ def motors_power_square(
     power_j = joint_applied_torque * asset.data.joint_vel  # (batch_size, num_joints)
     if normalize_by_stiffness:
         for target_ids, stiffness in _iter_joint_actuator_targets_and_stiffness(asset):
-            power_j[:, target_ids] /= torch.as_tensor(
-                stiffness, device=power_j.device, dtype=power_j.dtype
-            )
+            power_j[:, target_ids] /= torch.as_tensor(stiffness, device=power_j.device, dtype=power_j.dtype)
     power_j = power_j[:, asset_cfg.joint_ids]  # (batch_size, num_selected_joints)
     power = torch.sum(torch.square(power_j), dim=-1)  # (batch_size,)
     if normalize_by_num_joints:
@@ -396,9 +394,7 @@ def joint_torques_l2(
 
     if normalize_by_stiffness:
         for target_ids, stiffness in _iter_joint_actuator_targets_and_stiffness(asset):
-            torques[:, target_ids] /= torch.as_tensor(
-                stiffness, device=torques.device, dtype=torques.dtype
-            )
+            torques[:, target_ids] /= torch.as_tensor(stiffness, device=torques.device, dtype=torques.dtype)
     torques = torques[:, asset_cfg.joint_ids]
 
     torques = torch.sum(torch.square(torques), dim=-1)
@@ -425,9 +421,7 @@ def joint_torques_gauss(
 
     if normalize_by_stiffness:
         for target_ids, stiffness in _iter_joint_actuator_targets_and_stiffness(asset):
-            torques[:, target_ids] /= torch.as_tensor(
-                stiffness, device=torques.device, dtype=torques.dtype
-            )
+            torques[:, target_ids] /= torch.as_tensor(stiffness, device=torques.device, dtype=torques.dtype)
     torques = torques[:, asset_cfg.joint_ids]
 
     if torlerance > 0:
@@ -1049,7 +1043,7 @@ def undesired_contacts(
     Mirrors the legacy ``mdp.undesired_contacts``: for each body, check if the
     maximum contact-force magnitude over the sensor's history window exceeds the
     threshold, then count these bodies.
-    
+
     Args:
         env: The environment.
         threshold: Force threshold for contact detection.
@@ -1058,11 +1052,11 @@ def undesired_contacts(
     """
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene[sensor_name]
-    
+
     force_history = contact_sensor.data.force_history
     force_norms = torch.norm(force_history, dim=-1)  # (B, N, H)
     max_force_norms = torch.max(force_norms, dim=-1)[0]  # (B, N)
     is_contact = max_force_norms[:, asset_cfg.body_ids] > threshold  # (B, N)
-    
+
     # sum over contacts for each environment
     return torch.sum(is_contact.float(), dim=1)

@@ -14,11 +14,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+import mjlab
 import numpy as np
 import torch
-
-import mjlab
 from mjlab.utils.lab_api import math as math_utils
+
 from instinct_mj.assets.unitree_g1 import G1_MJCF_PATH
 from instinct_mj.utils.humanoid_ik import HumanoidSmplRotationalIK
 
@@ -148,19 +148,13 @@ def run_visualize(cfg: VisualizeConfig) -> None:
         root_pos, root_quat, joint_pos, framerate = _load_single_motion(motion_file, cfg)
 
         num_frames = root_pos.shape[0]
-        print(
-            f"  Framerate: {framerate}, Frames: {num_frames}, "
-            f"Duration: {num_frames / framerate:.2f}s"
-        )
+        print(f"  Framerate: {framerate}, Frames: {num_frames}, Duration: {num_frames / framerate:.2f}s")
 
         # Print basic statistics
         root_height_min = root_pos[:, 2].min().item()
         root_height_max = root_pos[:, 2].max().item()
         root_height_mean = root_pos[:, 2].mean().item()
-        print(
-            f"  Root height: min={root_height_min:.3f}, max={root_height_max:.3f}, "
-            f"mean={root_height_mean:.3f}"
-        )
+        print(f"  Root height: min={root_height_min:.3f}, max={root_height_max:.3f}, mean={root_height_mean:.3f}")
 
         # Compute root velocity
         if num_frames > 1:

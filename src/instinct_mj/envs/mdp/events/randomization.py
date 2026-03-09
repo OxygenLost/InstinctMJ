@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Literal
 
-from instinct_mj.envs import ManagerBasedRLEnv
-from instinct_mj.sensors.grouped_ray_caster import GroupedRayCaster
+import torch
 from mjlab.envs.mdp import dr
 from mjlab.managers import EventTermCfg, ManagerTermBase, SceneEntityCfg
 from mjlab.managers.event_manager import RecomputeLevel, requires_model_fields
 from mjlab.sensor import RayCastSensor as RayCaster
 from mjlab.utils.lab_api import math as math_utils
 
+from instinct_mj.envs import ManagerBasedRLEnv
+from instinct_mj.sensors.grouped_ray_caster import GroupedRayCaster
+
 if TYPE_CHECKING:
-    from instinct_mj.sensors.grouped_ray_caster import GroupedRayCasterCamera
     from mjlab.entity import Entity as Articulation
     from mjlab.entity import Entity as RigidObject
     from mjlab.sensor import CameraSensor as Camera
     from mjlab.sensor import RayCastSensor as RayCasterCamera
+
+    from instinct_mj.sensors.grouped_ray_caster import GroupedRayCasterCamera
 
 ManagerBasedEnv = ManagerBasedRLEnv
 
@@ -196,11 +198,7 @@ def randomize_rigid_body_com(
 ):
     """Randomize rigid-body COM offsets using latest InstinctLab ``com_range`` semantics."""
     axis_map = {"x": 0, "y": 1, "z": 2}
-    ranges = {
-        axis_map[axis_name]: axis_range
-        for axis_name, axis_range in com_range.items()
-        if axis_name in axis_map
-    }
+    ranges = {axis_map[axis_name]: axis_range for axis_name, axis_range in com_range.items() if axis_name in axis_map}
     if len(ranges) == 0:
         return
 
@@ -214,7 +212,6 @@ def randomize_rigid_body_com(
         operation=_DR_ADD_CURRENT,
         axes=sorted(ranges.keys()),
     )
-
 
 
 def randomize_default_joint_pos(

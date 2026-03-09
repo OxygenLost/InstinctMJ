@@ -1,5 +1,7 @@
 # Training/runtime logs
-logs/
+logs/*
+!logs/AGENTS.md
+!logs/README.md
 log/
 *.log
 

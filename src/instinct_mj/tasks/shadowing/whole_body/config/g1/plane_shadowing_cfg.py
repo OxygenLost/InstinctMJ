@@ -8,18 +8,19 @@ from __future__ import annotations
 import os
 from copy import deepcopy
 
+import mjlab.envs.mdp as mdp
 import mujoco
 import yaml
-
-import mjlab.envs.mdp as mdp
 from mjlab.envs import ManagerBasedRlEnvCfg
-from mjlab.managers import CurriculumTermCfg
-from mjlab.managers import EventTermCfg
-from mjlab.managers import ObservationGroupCfg
-from mjlab.managers import ObservationTermCfg
-from mjlab.managers import RewardTermCfg
-from mjlab.managers import SceneEntityCfg
-from mjlab.managers import TerminationTermCfg
+from mjlab.managers import (
+    CurriculumTermCfg,
+    EventTermCfg,
+    ObservationGroupCfg,
+    ObservationTermCfg,
+    RewardTermCfg,
+    SceneEntityCfg,
+    TerminationTermCfg,
+)
 from mjlab.scene import SceneCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.terrains import TerrainImporterCfg
@@ -29,10 +30,7 @@ from mjlab.viewer.viewer_config import ViewerConfig
 
 import instinct_mj.envs.mdp as instinct_mdp
 import instinct_mj.tasks.shadowing.whole_body.shadowing_env_cfg as shadowing_cfg
-from instinct_mj.assets.unitree_g1 import (
-    G1_29DOF_TORSOBASE_POPSICLE_CFG,
-    beyondmimic_action_scale,
-)
+from instinct_mj.assets.unitree_g1 import G1_29DOF_TORSOBASE_POPSICLE_CFG, beyondmimic_action_scale
 from instinct_mj.envs.manager_based_rl_env_cfg import InstinctLabRLEnvCfg
 from instinct_mj.monitors import (
     MonitorTermCfg,
@@ -46,14 +44,9 @@ from instinct_mj.monitors import (
 from instinct_mj.motion_reference import MotionReferenceManagerCfg
 from instinct_mj.motion_reference.motion_files.amass_motion_cfg import AmassMotionCfg as AmassMotionCfgBase
 from instinct_mj.motion_reference.utils import motion_interpolate_bilinear
-from instinct_mj.utils.motion_validation import resolve_datasets_root
 
 combine_method = "prod"
 G1_CFG = G1_29DOF_TORSOBASE_POPSICLE_CFG
-_DATASETS_ROOT = resolve_datasets_root()
-
-_UNDESIRED_CONTACT_SENSOR_NAME = "undesired_contact_forces"
-_SELF_COLLISION_SENSOR_NAME = "self_collision"
 
 
 def _edit_shadowing_scene_spec(spec: mujoco.MjSpec) -> None:
@@ -67,16 +60,28 @@ def _edit_shadowing_scene_spec(spec: mujoco.MjSpec) -> None:
     ground_rgb2 = (0.88, 0.88, 0.88)
     ground_mark_rgb = (0.80, 0.80, 0.80)
 
-    existing_skybox = next(
-        tex
-        for tex in spec.textures
-        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX
-    )
-    existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
-    existing_skybox.rgb1[:] = sky_rgb_top
-    existing_skybox.rgb2[:] = sky_rgb_horizon
-    existing_skybox.width = 512
-    existing_skybox.height = 3072
+    existing_skybox = None
+    for tex in spec.textures:
+        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            existing_skybox = tex
+            break
+
+    if existing_skybox is not None:
+        existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
+        existing_skybox.rgb1[:] = sky_rgb_top
+        existing_skybox.rgb2[:] = sky_rgb_horizon
+        existing_skybox.width = 512
+        existing_skybox.height = 3072
+    else:
+        TextureCfg(
+            name="whole_body_skybox",
+            type="skybox",
+            builtin="gradient",
+            rgb1=sky_rgb_top,
+            rgb2=sky_rgb_horizon,
+            width=512,
+            height=3072,
+        ).edit_spec(spec)
 
     TextureCfg(
         name=ground_texture_name,
@@ -104,6 +109,7 @@ def _edit_shadowing_scene_spec(spec: mujoco.MjSpec) -> None:
     for geom in spec.body("terrain").geoms:
         geom.material = ground_material_name
 
+
 # MOTION_NAME = "AccadRun" # success
 # _hacked_selected_file_ = "ACCAD/Male2Running_c3d/C5 - walk to run_retargetted.npz"
 
@@ -126,7 +132,7 @@ _hacked_selected_files_ = ["fightAndSports1_subject1_retargetted.npz"]
 # _hacked_selected_files_ = ["CMU/90/90_26_retargetted.npz"]
 
 MOTION_NAME = "LafanFight5Files"
-_path_ = os.path.expanduser("~/Xyk/Datasets/NoKov-Marslab-Motions-instinctnpz/20251016_diveroll4_single")
+_path_ = os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
 _hacked_selected_files_ = [
     "fight1_subject2_retargetted.npz",
     "fight1_subject3_retargetted.npz",
@@ -137,12 +143,7 @@ _hacked_selected_files_ = [
 
 
 MOTION_NAME = "LafanFiltered"
-_path_ = os.path.expanduser(
-    os.environ.get(
-        "INSTINCT_WHOLEBODY_MOTION_PATH",
-        "~/Xyk/Datasets/NoKov-Marslab-Motions-instinctnpz/20251016_diveroll4_single",
-    )
-)
+_path_ = os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
 _hacked_selected_files_ = [
     "aiming1_subject1_retargetted.npz",  # O
     "aiming1_subject4_retargetted.npz",  # O
@@ -224,7 +225,7 @@ _hacked_selected_files_ = [
 ]
 
 # MOTION_NAME = "LafanGetup2S3"
-# _path_ = os.path.expanduser("~/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
+# _path_ = os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
 # _hacked_selected_files_ = [
 #     "fallAndGetUp2_subject3_retargetted.npz",
 # ]
@@ -236,174 +237,115 @@ with open(f"/tmp/{MOTION_NAME}.yaml", "w") as f:
         },
         f,
     )
-
-
-def _make_amass_motion_cfg() -> AmassMotionCfgBase:
-    return AmassMotionCfgBase(
-        # path = os.path.expanduser("~/Datasets/AMASS_CMU_KIT_ACCAD_DanceDB_HumanEva_retargetted_20250702")
-        # path = os.path.expanduser("~/Datasets/AMASS_SMPLX-NG_GMR_29dof_g1_torsoBase_retargetted_20250825_instinctnpz")
-        # path = os.path.expanduser("~/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
-        # path = os.path.expanduser("~/Datasets/AMASS_SMPLX-NG_GMR_29dof_g1_torsoBase_retargetted_20250901_instinctnpz")
-        # path = _path_
-        path=_path_,
-        retargetting_func=None,
-        filtered_motion_selection_filepath=None,
-        motion_start_from_middle_range=[0.0, 0.8],
-        motion_start_height_offset=0.0,
-        ensure_link_below_zero_ground=False,
-        # env_starting_stub_sampling_strategy = "concat_motion_bins"
-        env_starting_stub_sampling_strategy="independent",
-        buffer_device="output_device",
-        motion_interpolate_func=motion_interpolate_bilinear,
-        velocity_estimation_method="frontbackward",
-        motion_bin_length_s=1.0,
-    )
-
-
-# URDF path for PyTorch Kinematics (G1_CFG.spawn.asset_path equivalent)
-_G1_URDF_PATH = os.path.join(
-    os.path.dirname(
+motion_reference_cfg = MotionReferenceManagerCfg(
+    name="motion_reference",
+    entity_name="robot",
+    robot_model_path=os.path.join(
         os.path.dirname(
             os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(
-                        os.path.dirname(os.path.abspath(__file__))
-                    )
-                )
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             )
-        )
+        ),
+        "assets",
+        "resources",
+        "unitree_g1",
+        "urdf",
+        "g1_29dof_torsobase_popsicle.urdf",
     ),
-    "assets", "resources", "unitree_g1", "urdf", "g1_29dof_torsobase_popsicle.urdf",
+    debug_vis=False,
+    reference_entity_name=None,
+    link_of_interests=[
+        "pelvis",
+        "torso_link",
+        "left_shoulder_roll_link",
+        "right_shoulder_roll_link",
+        "left_elbow_link",
+        "right_elbow_link",
+        "left_wrist_yaw_link",
+        "right_wrist_yaw_link",
+        "left_hip_roll_link",
+        "right_hip_roll_link",
+        "left_knee_link",
+        "right_knee_link",
+        "left_ankle_roll_link",
+        "right_ankle_roll_link",
+    ],
+    # symmetric_augmentation_link_mapping=[
+    #     0,
+    #     1,
+    #     3,
+    #     2,
+    #     5,
+    #     4,
+    #     7,
+    #     6,
+    #     9,
+    #     8,
+    #     11,
+    #     10,
+    #     13,
+    #     12,
+    # ],
+    # symmetric_augmentation_joint_mapping=G1_29Dof_torsoBase_symmetric_augmentation_joint_mapping,
+    # symmetric_augmentation_joint_reverse_buf=G1_29Dof_torsoBase_symmetric_augmentation_joint_reverse_buf,
+    symmetric_augmentation_link_mapping=None,
+    symmetric_augmentation_joint_mapping=None,
+    symmetric_augmentation_joint_reverse_buf=None,
+    frame_interval_s=0.02,
+    update_period=0.02,
+    num_frames=10,
+    data_start_from="current_time",
+    visualizing_robot_offset=(0.0, 1.5, 0.0),
+    visualizing_robot_from="reference_frame",
+    motion_buffers={
+        #     "CMU_KIT": AmassMotionCfg(
+        #         path=os.path.expanduser("~/Xyk/Datasets/AMASS_CMU_KIT_retargetted_20250702"),  # type: ignore
+        #         filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
+        #             "~/Xyk/Datasets/AMASS_selections/CMU_KIT_weighted_retargetted_20250702.yaml",
+        #         ),
+        #     ),
+        # "CMU_KIT_DanceDB_BioMotionLab": AmassMotionCfg(
+        #     path=os.path.expanduser("~/Xyk/Datasets/AMASS_CMU_KIT_DanceDB_BioMotionLab_retargetted_20250702"),  # type: ignore
+        #     filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
+        #         "~/Xyk/Datasets/AMASS_selections/CMU_KIT_DanceDB_BioMotionLab_weighted_retargetted_20250702.yaml",
+        #     ),
+        # ),
+        # "CMU_KIT_ACCAD_DanceDB_HumanEva": AmassMotionCfg(
+        #     path=os.path.expanduser("~/Xyk/Datasets/AMASS_CMU_KIT_ACCAD_DanceDB_HumanEva_retargetted_20250702"),  # type: ignore
+        #     filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
+        #         # "~/Xyk/Datasets/AMASS_selections/CMU_KIT_ACCAD_DanceDB_HumanEva_weighted_retargetted_20250702.yaml",
+        #         "~/Xyk/Datasets/AMASS_selections/CMU_KIT_ACCAD_DanceDB_HumanEva_weighted_moverange_20250724_retargetted_20250702.yaml",
+        #     ),
+        # ),
+        # "UbisoftLAFAN1_GMR": AmassMotionCfg(
+        #     path=os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz"),  # type: ignore
+        #     filtered_motion_selection_filepath=None,
+        # ),
+        MOTION_NAME: AmassMotionCfgBase(
+            # path = os.path.expanduser("~/Xyk/Datasets/AMASS_CMU_KIT_ACCAD_DanceDB_HumanEva_retargetted_20250702")
+            # path = os.path.expanduser("~/Xyk/Datasets/AMASS_SMPLX-NG_GMR_29dof_g1_torsoBase_retargetted_20250825_instinctnpz")
+            # path = os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz")
+            # path = os.path.expanduser("~/Xyk/Datasets/AMASS_SMPLX-NG_GMR_29dof_g1_torsoBase_retargetted_20250901_instinctnpz")
+            # path = _path_
+            path=os.path.expanduser("~/Xyk/Datasets/NoKov-Marslab-Motions-instinctnpz/20251016_diveroll4_single"),
+            retargetting_func=None,
+            filtered_motion_selection_filepath=None,
+            motion_start_from_middle_range=[0.0, 0.8],
+            motion_start_height_offset=0.0,
+            ensure_link_below_zero_ground=False,
+            # env_starting_stub_sampling_strategy = "concat_motion_bins"
+            env_starting_stub_sampling_strategy="independent",
+            buffer_device="output_device",
+            motion_interpolate_func=motion_interpolate_bilinear,
+            velocity_estimation_method="frontbackward",
+            motion_bin_length_s=1.0,
+        ),
+    },
+    mp_split_method="Even",
 )
-
-
-def _make_motion_reference_cfg(*, debug_vis: bool) -> MotionReferenceManagerCfg:
-    return MotionReferenceManagerCfg(
-        name="motion_reference",
-        entity_name="robot",
-        robot_model_path=_G1_URDF_PATH,
-        debug_vis=debug_vis,
-        reference_entity_name="robot_reference" if debug_vis else None,
-        link_of_interests=[
-            "pelvis",
-            "torso_link",
-            "left_shoulder_roll_link",
-            "right_shoulder_roll_link",
-            "left_elbow_link",
-            "right_elbow_link",
-            "left_wrist_yaw_link",
-            "right_wrist_yaw_link",
-            "left_hip_roll_link",
-            "right_hip_roll_link",
-            "left_knee_link",
-            "right_knee_link",
-            "left_ankle_roll_link",
-            "right_ankle_roll_link",
-        ],
-        # symmetric_augmentation_link_mapping=[
-        #     0,
-        #     1,
-        #     3,
-        #     2,
-        #     5,
-        #     4,
-        #     7,
-        #     6,
-        #     9,
-        #     8,
-        #     11,
-        #     10,
-        #     13,
-        #     12,
-        # ],
-        # symmetric_augmentation_joint_mapping=G1_29Dof_torsoBase_symmetric_augmentation_joint_mapping,
-        # symmetric_augmentation_joint_reverse_buf=G1_29Dof_torsoBase_symmetric_augmentation_joint_reverse_buf,
-        symmetric_augmentation_link_mapping=None,
-        symmetric_augmentation_joint_mapping=None,
-        symmetric_augmentation_joint_reverse_buf=None,
-        frame_interval_s=0.02,
-        update_period=0.02,
-        num_frames=10,
-        data_start_from="current_time",
-        visualizing_robot_offset=(0.0, 1.5, 0.0),
-        visualizing_robot_from="reference_frame",
-        motion_buffers={
-            #     "CMU_KIT": AmassMotionCfg(
-            #         path=os.path.expanduser("~/Datasets/AMASS_CMU_KIT_retargetted_20250702"),  # type: ignore
-            #         filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
-            #             "~/Datasets/AMASS_selections/CMU_KIT_weighted_retargetted_20250702.yaml",
-            #         ),
-            #     ),
-            # "CMU_KIT_DanceDB_BioMotionLab": AmassMotionCfg(
-            #     path=os.path.expanduser("~/Datasets/AMASS_CMU_KIT_DanceDB_BioMotionLab_retargetted_20250702"),  # type: ignore
-            #     filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
-            #         "~/Datasets/AMASS_selections/CMU_KIT_DanceDB_BioMotionLab_weighted_retargetted_20250702.yaml",
-            #     ),
-            # ),
-            # "CMU_KIT_ACCAD_DanceDB_HumanEva": AmassMotionCfg(
-            #     path=os.path.expanduser("~/Datasets/AMASS_CMU_KIT_ACCAD_DanceDB_HumanEva_retargetted_20250702"),  # type: ignore
-            #     filtered_motion_selection_filepath=os.path.expanduser(  # type: ignore
-            #         # "~/Datasets/AMASS_selections/CMU_KIT_ACCAD_DanceDB_HumanEva_weighted_retargetted_20250702.yaml",
-            #         "~/Datasets/AMASS_selections/CMU_KIT_ACCAD_DanceDB_HumanEva_weighted_moverange_20250724_retargetted_20250702.yaml",
-            #     ),
-            # ),
-            # "UbisoftLAFAN1_GMR": AmassMotionCfg(
-            #     path=os.path.expanduser("~/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz"),  # type: ignore
-            #     filtered_motion_selection_filepath=None,
-            # ),
-            MOTION_NAME: _make_amass_motion_cfg(),
-        },
-        mp_split_method="Even",
-    )
-
-
-def _make_scene_cfg(*, play: bool, motion_reference_cfg: MotionReferenceManagerCfg) -> SceneCfg:
-    undesired_contact_forces = ContactSensorCfg(
-        name=_UNDESIRED_CONTACT_SENSOR_NAME,
-        primary=ContactMatch(
-            mode="body",
-            pattern=".*",
-            entity="robot",
-            exclude=(
-                "left_ankle_roll_link",
-                "right_ankle_roll_link",
-                "left_wrist_yaw_link",
-                "right_wrist_yaw_link",
-            ),
-        ),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="netforce",
-        num_slots=1,
-        history_length=3,
-    )
-    self_collision = ContactSensorCfg(
-        name=_SELF_COLLISION_SENSOR_NAME,
-        primary=ContactMatch(mode="subtree", pattern="torso_link", entity="robot"),
-        secondary=ContactMatch(mode="subtree", pattern="torso_link", entity="robot"),
-        fields=("found",),
-        reduce="none",
-        num_slots=1,
-    )
-
-    entities = {
-        "robot": deepcopy(G1_CFG),
-    }
-    if play:
-        entities["robot_reference"] = deepcopy(G1_CFG)
-
-    return SceneCfg(
-        num_envs=1 if play else 2048,
-        env_spacing=2.5 if play else 4.0,
-        terrain=TerrainImporterCfg(terrain_type="plane"),
-        entities=entities,
-        sensors=(
-            undesired_contact_forces,
-            self_collision,
-            motion_reference_cfg,
-        ),
-        spec_fn=_edit_shadowing_scene_spec,
-    )
+motion_reference_cfg_play = deepcopy(motion_reference_cfg)
+motion_reference_cfg_play.debug_vis = True
+motion_reference_cfg_play.reference_entity_name = "robot_reference"
 
 
 def _actions_cfg() -> dict[str, mdp.JointPositionActionCfg]:
@@ -538,11 +480,6 @@ def _observations_cfg(link_of_interests: list[str]) -> dict[str, ObservationGrou
             concatenate_terms=False,
         ),
     }
-
-
-def _rewards_cfg() -> dict[str, RewardTermCfg | None]:
-    # Inherits rewards from whole_body.shadowing_env_cfg.
-    return deepcopy(shadowing_cfg.shadowing_rewards_terms())
 
 
 def _events_cfg() -> dict[str, EventTermCfg | None]:
@@ -810,126 +747,181 @@ def _monitors_cfg() -> dict[str, MonitorTermCfg]:
     }
 
 
-def _viewer_cfg(play: bool) -> ViewerConfig:
-    if not play:
-        return ViewerConfig()
-    return ViewerConfig(
-        lookat=(0.0, 0.75, 0.0),
-        distance=4.1231,
-        elevation=14.0362,
-        azimuth=0.0,
-        origin_type=ViewerConfig.OriginType.ASSET_ROOT,
-        entity_name="robot",
+def g1_plane_shadowing_env_cfg(*, play: bool = False) -> ManagerBasedRlEnvCfg:
+    active_motion_reference_cfg = deepcopy(motion_reference_cfg_play if play else motion_reference_cfg)
+    entities = {
+        "robot": deepcopy(G1_CFG),
+    }
+    if play:
+        entities["robot_reference"] = deepcopy(G1_CFG)
+    scene = SceneCfg(
+        num_envs=1 if play else 2048,
+        env_spacing=2.5 if play else 4.0,
+        terrain=TerrainImporterCfg(terrain_type="plane"),
+        entities=entities,
+        sensors=(
+            ContactSensorCfg(
+                name="undesired_contact_forces",
+                primary=ContactMatch(
+                    mode="body",
+                    pattern=".*",
+                    entity="robot",
+                    exclude=(
+                        "left_ankle_roll_link",
+                        "right_ankle_roll_link",
+                        "left_wrist_yaw_link",
+                        "right_wrist_yaw_link",
+                    ),
+                ),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="netforce",
+                num_slots=1,
+                history_length=3,
+            ),
+            ContactSensorCfg(
+                name="self_collision",
+                primary=ContactMatch(mode="subtree", pattern="torso_link", entity="robot"),
+                secondary=ContactMatch(mode="subtree", pattern="torso_link", entity="robot"),
+                fields=("found",),
+                reduce="none",
+                num_slots=1,
+            ),
+            active_motion_reference_cfg,
+        ),
+        spec_fn=_edit_shadowing_scene_spec,
     )
 
+    cfg = InstinctLabRLEnvCfg(
+        scene=scene,
+        actions=_actions_cfg(),
+        observations=_observations_cfg(link_of_interests=list(active_motion_reference_cfg.link_of_interests)),
+        commands=_commands_cfg(),
+        rewards=deepcopy(shadowing_cfg.shadowing_rewards_terms()),
+        events=_events_cfg(),
+        curriculum=_curriculum_cfg(),
+        terminations=_terminations_cfg(),
+        monitors=_monitors_cfg(),
+        viewer=(
+            ViewerConfig()
+            if not play
+            else ViewerConfig(
+                lookat=(0.0, 0.75, 0.0),
+                distance=4.1231,
+                elevation=14.0362,
+                azimuth=0.0,
+                origin_type=ViewerConfig.OriginType.ASSET_ROOT,
+                entity_name="robot",
+            )
+        ),
+        decimation=4,
+        episode_length_s=10.0,
+    )
+    cfg.sim.njmax = 1200
+    cfg.sim.nconmax = None
+    cfg.sim.mujoco.timestep = 1.0 / 50.0 / cfg.decimation
+    cfg.sim.mujoco.iterations = 10
+    cfg.sim.mujoco.ls_iterations = 20
 
-def _apply_motion_buffer_curriculum(cfg: ManagerBasedRlEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
     assert (
-        len(list(motion_reference_cfg.motion_buffers.keys())) == 1
+        len(list(active_motion_reference_cfg.motion_buffers.keys())) == 1
     ), "Only support single motion buffer for now"
-    motion_buffer = list(motion_reference_cfg.motion_buffers.values())[0]
-    if motion_buffer.motion_bin_length_s is None:
-        return
-    if motion_buffer.env_starting_stub_sampling_strategy == "concat_motion_bins":
-        cfg.curriculum["beyond_adaptive_sampling"] = CurriculumTermCfg(  # type: ignore[arg-type]
-            func=instinct_mdp.BeyondConcatMotionAdaptiveWeighting,
-        )
-    elif motion_buffer.env_starting_stub_sampling_strategy == "independent":
-        cfg.curriculum["beyond_adaptive_sampling"] = CurriculumTermCfg(  # type: ignore[arg-type]
-            func=instinct_mdp.BeyondMimicAdaptiveWeighting,
-        )
-    else:
-        raise ValueError(
-            "Unsupported env starting stub sampling method:"
-            f" {motion_buffer.env_starting_stub_sampling_strategy}"
-        )
+    motion_buffer = list(active_motion_reference_cfg.motion_buffers.values())[0]
+    if motion_buffer.motion_bin_length_s is not None:
+        if motion_buffer.env_starting_stub_sampling_strategy == "concat_motion_bins":
+            cfg.curriculum["beyond_adaptive_sampling"] = CurriculumTermCfg(  # type: ignore[arg-type]
+                func=instinct_mdp.BeyondConcatMotionAdaptiveWeighting,
+            )
+        elif motion_buffer.env_starting_stub_sampling_strategy == "independent":
+            cfg.curriculum["beyond_adaptive_sampling"] = CurriculumTermCfg(  # type: ignore[arg-type]
+                func=instinct_mdp.BeyondMimicAdaptiveWeighting,
+            )
+        else:
+            raise ValueError(
+                f"Unsupported env starting stub sampling method: {motion_buffer.env_starting_stub_sampling_strategy}"
+            )
+    if play:
+        # spawn the robot randomly in the grid (instead of their terrain levels)
+        cfg.scene.terrain.max_init_terrain_level = None
+        # reduce the number of terrains to save memory
+        if cfg.scene.terrain.terrain_generator is not None:
+            cfg.scene.terrain.terrain_generator.num_rows = 3
+            cfg.scene.terrain.terrain_generator.num_cols = 3
+            cfg.scene.terrain.terrain_generator.curriculum = False
 
+        active_motion_reference_cfg.symmetric_augmentation_joint_mapping = None
+        active_motion_reference_cfg.visualizing_marker_types = ["relative_links"]
+        cfg.curriculum["beyond_adaptive_sampling"] = None
+        cfg.events["push_robot"] = None
+        cfg.events["bin_fail_counter_smoothing"] = None
 
-def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
-    # spawn the robot randomly in the grid (instead of their terrain levels)
-    cfg.scene.terrain.max_init_terrain_level = None
-    # reduce the number of terrains to save memory
-    if cfg.scene.terrain.terrain_generator is not None:
-        cfg.scene.terrain.terrain_generator.num_rows = 3
-        cfg.scene.terrain.terrain_generator.num_cols = 3
-        cfg.scene.terrain.terrain_generator.curriculum = False
+        # enable print_reason option in the termination terms
+        for term in cfg.terminations.values():
+            if "print_reason" in term.params:
+                term.params["print_reason"] = True
+        # self.episode_length_s = 10.0
+        # for term_name, term in self.terminations.__dict__.items():
+        #     if (not term_name == "dataset_exhausted") and (not term_name == "time_out"):
+        #         self.terminations.__dict__[term_name] = None
 
-    motion_reference_cfg.symmetric_augmentation_joint_mapping = None
-    motion_reference_cfg.visualizing_marker_types = ["relative_links"]
-    cfg.curriculum["beyond_adaptive_sampling"] = None
-    cfg.events["push_robot"] = None
-    cfg.events["bin_fail_counter_smoothing"] = None
+        # enable debug_vis option in commands
+        cfg.commands["position_ref_command"].debug_vis = True
+        cfg.commands["position_b_ref_command"].debug_vis = True
+        cfg.commands["rotation_ref_command"].debug_vis = True
+        cfg.commands["joint_pos_ref_command"].debug_vis = True
+        cfg.commands["joint_vel_ref_command"].debug_vis = True
 
-    # enable print_reason option in the termination terms
-    for term in cfg.terminations.values():
-        if "print_reason" in term.params:
-            term.params["print_reason"] = True
-    # self.episode_length_s = 10.0
-    # for term_name, term in self.terminations.__dict__.items():
-    #     if (not term_name == "dataset_exhausted") and (not term_name == "time_out"):
-    #         self.terminations.__dict__[term_name] = None
+        # add PLAY-specific monitor term
+        # self.monitors.shoulder_actuator = MonitorTermCfg(
+        #     func=ActuatorMonitorTerm,
+        #     params={
+        #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="left_shoulder_roll.*"),
+        #         "torque_plot_scale": 1e-2,
+        #         # "joint_vel_plot_scale": 1e-1,
+        #         "joint_power_plot_scale": 1e-1,
+        #     },
+        # )
+        # self.monitors.waist_actuator = MonitorTermCfg(
+        #     func=ActuatorMonitorTerm,
+        #     params={
+        #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="waist_roll.*"),
+        #         "torque_plot_scale": 1e-2,
+        #         # "joint_vel_plot_scale": 1e-1,
+        #         "joint_power_plot_scale": 1e-1,
+        #     },
+        # )
+        # self.monitors.knee_actuator = MonitorTermCfg(
+        #     func=ActuatorMonitorTerm,
+        #     params={
+        #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="left_knee.*"),
+        #         "torque_plot_scale": 1e-2,
+        #         # "joint_vel_plot_scale": 1e-1,
+        #         "joint_power_plot_scale": 1e-1,
+        #     },
+        # )
+        # self.monitors.reward_sum = MonitorTermCfg(
+        #     func=RewardSumMonitorTerm,
+        # )
+        # self.monitors.reference_stat_case = MonitorTermCfg(
+        #     func=ShadowingJointReferenceMonitorTerm,
+        #     params=dict(
+        #         reference_cfg=SceneEntityCfg(
+        #             "motion_reference",
+        #             joint_names=[
+        #                 "left_hip_pitch.*",
+        #             ],
+        #         ),
+        #     ),
+        # )
+        # self.monitors.shadowing_base_pos = MonitorTermCfg(
+        #     func=ShadowingBasePosMonitorTerm,
+        #     params=dict(
+        #         robot_cfg=SceneEntityCfg("robot"),
+        #         motion_reference_cfg=SceneEntityCfg("motion_reference"),
+        #     ),
+        # )
 
-    # enable debug_vis option in commands
-    cfg.commands["position_ref_command"].debug_vis = True
-    cfg.commands["position_b_ref_command"].debug_vis = True
-    cfg.commands["rotation_ref_command"].debug_vis = True
-    cfg.commands["joint_pos_ref_command"].debug_vis = True
-    cfg.commands["joint_vel_ref_command"].debug_vis = True
-
-    # add PLAY-specific monitor term
-    # self.monitors.shoulder_actuator = MonitorTermCfg(
-    #     func=ActuatorMonitorTerm,
-    #     params={
-    #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="left_shoulder_roll.*"),
-    #         "torque_plot_scale": 1e-2,
-    #         # "joint_vel_plot_scale": 1e-1,
-    #         "joint_power_plot_scale": 1e-1,
-    #     },
-    # )
-    # self.monitors.waist_actuator = MonitorTermCfg(
-    #     func=ActuatorMonitorTerm,
-    #     params={
-    #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="waist_roll.*"),
-    #         "torque_plot_scale": 1e-2,
-    #         # "joint_vel_plot_scale": 1e-1,
-    #         "joint_power_plot_scale": 1e-1,
-    #     },
-    # )
-    # self.monitors.knee_actuator = MonitorTermCfg(
-    #     func=ActuatorMonitorTerm,
-    #     params={
-    #         "asset_cfg": SceneEntityCfg(name="robot", joint_names="left_knee.*"),
-    #         "torque_plot_scale": 1e-2,
-    #         # "joint_vel_plot_scale": 1e-1,
-    #         "joint_power_plot_scale": 1e-1,
-    #     },
-    # )
-    # self.monitors.reward_sum = MonitorTermCfg(
-    #     func=RewardSumMonitorTerm,
-    # )
-    # self.monitors.reference_stat_case = MonitorTermCfg(
-    #     func=ShadowingJointReferenceMonitorTerm,
-    #     params=dict(
-    #         reference_cfg=SceneEntityCfg(
-    #             "motion_reference",
-    #             joint_names=[
-    #                 "left_hip_pitch.*",
-    #             ],
-    #         ),
-    #     ),
-    # )
-    # self.monitors.shadowing_base_pos = MonitorTermCfg(
-    #     func=ShadowingBasePosMonitorTerm,
-    #     params=dict(
-    #         robot_cfg=SceneEntityCfg("robot"),
-    #         motion_reference_cfg=SceneEntityCfg("motion_reference"),
-    #     ),
-    # )
-
-
-def _build_run_name(cfg: InstinctLabRLEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> str:
-    motion_buffer = list(motion_reference_cfg.motion_buffers.values())[0]
-    return "".join(
+    cfg.run_name = "".join(
         [
             "G1Shadowing",
             f"_{MOTION_NAME}",
@@ -966,37 +958,6 @@ def _build_run_name(cfg: InstinctLabRLEnvCfg, motion_reference_cfg: MotionRefere
             "_fixFramerate_diveroll4",
         ]
     )
-
-
-def g1_plane_shadowing_env_cfg(*, play: bool = False) -> ManagerBasedRlEnvCfg:
-    motion_reference_cfg = _make_motion_reference_cfg(debug_vis=play)
-    scene = _make_scene_cfg(play=play, motion_reference_cfg=motion_reference_cfg)
-
-    cfg = InstinctLabRLEnvCfg(
-        scene=scene,
-        actions=_actions_cfg(),
-        observations=_observations_cfg(link_of_interests=list(motion_reference_cfg.link_of_interests)),
-        commands=_commands_cfg(),
-        rewards=_rewards_cfg(),
-        events=_events_cfg(),
-        curriculum=_curriculum_cfg(),
-        terminations=_terminations_cfg(),
-        monitors=_monitors_cfg(),
-        viewer=_viewer_cfg(play),
-        decimation=4,
-        episode_length_s=10.0,
-    )
-    cfg.sim.njmax = 1200
-    cfg.sim.nconmax = None
-    cfg.sim.mujoco.timestep = 1.0 / 50.0 / cfg.decimation
-    cfg.sim.mujoco.iterations = 10
-    cfg.sim.mujoco.ls_iterations = 20
-
-    _apply_motion_buffer_curriculum(cfg, motion_reference_cfg)
-    if play:
-        _apply_play_overrides(cfg, motion_reference_cfg)
-
-    cfg.run_name = _build_run_name(cfg, motion_reference_cfg)
     return cfg
 
 

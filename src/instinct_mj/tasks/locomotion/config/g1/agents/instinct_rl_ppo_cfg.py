@@ -1,4 +1,4 @@
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 
 from instinct_mj.rl import (
     InstinctRlActorCriticCfg,
@@ -19,7 +19,6 @@ class PolicyCfg(InstinctRlActorCriticCfg):
     activation: str = "elu"
 
 
-
 @dataclass(kw_only=True)
 class AlgorithmCfg(InstinctRlPpoAlgorithmCfg):
     class_name: str = "PPO"
@@ -35,7 +34,6 @@ class AlgorithmCfg(InstinctRlPpoAlgorithmCfg):
     lam: float = 0.95
     desired_kl: float = 0.01
     max_grad_norm: float = 1.0
-
 
 
 @dataclass(kw_only=True)
@@ -55,9 +53,7 @@ class G1FlatPPORunnerCfg(InstinctRlOnPolicyRunnerCfg):
     log_interval: int = 10
     experiment_name: str = "g1_locomotion_flat"
 
-
     load_run: object | None = None
-
 
     def __post_init__(self):
         super().__post_init__()  # type: ignore

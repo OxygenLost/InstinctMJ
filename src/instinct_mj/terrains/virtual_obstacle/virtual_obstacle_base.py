@@ -1,10 +1,11 @@
 from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from dataclasses import MISSING, dataclass
+from typing import TYPE_CHECKING
 
 import torch
 import trimesh
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
 from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 

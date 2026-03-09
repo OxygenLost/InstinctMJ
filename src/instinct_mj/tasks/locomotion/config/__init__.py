@@ -1,2 +1,1 @@
 """Locomotion task configs."""
-

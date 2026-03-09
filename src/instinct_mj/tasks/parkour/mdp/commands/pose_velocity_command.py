@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import numpy as np
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import numpy as np
+import torch
 from mjlab.utils.lab_api import math as math_utils
 from mjlab.utils.lab_api.math import quat_apply_inverse as quat_rotate_inverse
 from mjlab.utils.lab_api.math import wrap_to_pi, yaw_quat
@@ -183,12 +183,10 @@ class PoseVelocityCommand(CommandTerm):
         cmd_nonzero = torch.logical_or(cmd_lin_norm > 1e-6, torch.abs(self.vel_command_b[:, 2]) > 1e-6)
         self.metrics["command_nonzero_ratio"] += cmd_nonzero.float() / self._env.max_episode_length
         self.metrics["target_near_ratio"] += (
-            (target_dist <= self.cfg.target_dis_threshold).float() / self._env.max_episode_length
-        )
+            target_dist <= self.cfg.target_dis_threshold
+        ).float() / self._env.max_episode_length
         self.metrics["standing_env_ratio"] += self.is_standing_env.float() / self._env.max_episode_length
-        self.metrics["random_velocity_env_ratio"] += (
-            self.random_velocity_indices.float() / self._env.max_episode_length
-        )
+        self.metrics["random_velocity_env_ratio"] += self.random_velocity_indices.float() / self._env.max_episode_length
 
     def _resample_command(self, env_ids: Sequence[int]):
         # sample new position targets from the terrain
@@ -316,7 +314,7 @@ class PoseVelocityCommand(CommandTerm):
 
     def _debug_vis_impl(self, visualizer) -> None:
         """Draw target positions and velocity arrows using MuJoCo geometry.
-        
+
         This replaces the legacy marker path with native MuJoCo visualization.
         """
         env_indices = visualizer.get_env_indices(self.num_envs)
@@ -359,21 +357,20 @@ class PoseVelocityCommand(CommandTerm):
             base_pos = base_pos_ws[batch]
             arrow_start = base_pos.copy()
             arrow_start[2] += arrow_z_offset
-            
+
             # Convert velocity command from body frame to world frame
             vel_cmd_b = vel_commands_b[batch]
             quat_w = base_quat_ws[batch]
             # Simple rotation: only yaw matters for horizontal velocity
-            yaw = np.arctan2(2.0 * (quat_w[0] * quat_w[3] + quat_w[1] * quat_w[2]),
-                           1.0 - 2.0 * (quat_w[2]**2 + quat_w[3]**2))
+            yaw = np.arctan2(
+                2.0 * (quat_w[0] * quat_w[3] + quat_w[1] * quat_w[2]), 1.0 - 2.0 * (quat_w[2] ** 2 + quat_w[3] ** 2)
+            )
             cos_yaw = np.cos(yaw)
             sin_yaw = np.sin(yaw)
-            vel_cmd_w = np.array([
-                cos_yaw * vel_cmd_b[0] - sin_yaw * vel_cmd_b[1],
-                sin_yaw * vel_cmd_b[0] + cos_yaw * vel_cmd_b[1],
-                0.0
-            ])
-            
+            vel_cmd_w = np.array(
+                [cos_yaw * vel_cmd_b[0] - sin_yaw * vel_cmd_b[1], sin_yaw * vel_cmd_b[0] + cos_yaw * vel_cmd_b[1], 0.0]
+            )
+
             arrow_end = arrow_start + vel_cmd_w * arrow_scale
             visualizer.add_arrow(
                 start=arrow_start,
@@ -385,12 +382,10 @@ class PoseVelocityCommand(CommandTerm):
 
             # 3. Draw actual velocity arrow (blue)
             lin_vel_b = lin_vel_bs[batch]
-            vel_actual_w = np.array([
-                cos_yaw * lin_vel_b[0] - sin_yaw * lin_vel_b[1],
-                sin_yaw * lin_vel_b[0] + cos_yaw * lin_vel_b[1],
-                0.0
-            ])
-            
+            vel_actual_w = np.array(
+                [cos_yaw * lin_vel_b[0] - sin_yaw * lin_vel_b[1], sin_yaw * lin_vel_b[0] + cos_yaw * lin_vel_b[1], 0.0]
+            )
+
             arrow_end_actual = arrow_start + vel_actual_w * arrow_scale
             visualizer.add_arrow(
                 start=arrow_start,
@@ -406,7 +401,7 @@ class PoseVelocityCommand(CommandTerm):
                 terrain_level = self.terrain.terrain_levels[batch].item()
                 terrain_type = self.terrain.terrain_types[batch].item()
                 patches = valid_targets[terrain_level, terrain_type]
-                
+
                 for i, patch_pos in enumerate(patches):
                     if np.linalg.norm(patch_pos) < 1e-6:  # Skip invalid patches
                         continue

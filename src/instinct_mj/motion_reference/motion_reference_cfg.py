@@ -1,11 +1,12 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
 
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Literal
 
-from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 from mjlab.sensor import SensorCfg
+
+from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 
 from .motion_buffer import MotionBuffer, MotionReferenceData
 from .motion_reference_manager import MotionReferenceManager
@@ -119,23 +120,25 @@ class MotionReferenceManagerCfg(SensorCfg):
         If None, the reference robot is not visualized.
     """
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/MotionReference",
-        markers={
-            "root_frame_ref": {
-                "scale": (0.15, 0.15, 0.15),
-                "color": (1.0, 1.0, 1.0, 1.0),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/MotionReference",
+            markers={
+                "root_frame_ref": {
+                    "scale": (0.15, 0.15, 0.15),
+                    "color": (1.0, 1.0, 1.0, 1.0),
+                },
+                "link_ref": {
+                    "radius": 0.04,
+                    "color": (0.0, 1.0, 0.0, 1.0),
+                },
+                "relative_link_ref": {
+                    "scale": (0.05, 0.05, 0.05),
+                    "color": (1.0, 1.0, 1.0, 1.0),
+                },
             },
-            "link_ref": {
-                "radius": 0.04,
-                "color": (0.0, 1.0, 0.0, 1.0),
-            },
-            "relative_link_ref": {
-                "scale": (0.05, 0.05, 0.05),
-                "color": (1.0, 1.0, 1.0, 1.0),
-            },
-        },
-    ))
+        )
+    )
     """ Visualization config for link reference and base_pose reference. """
 
     visualizing_marker_types: list[str] = field(default_factory=list)

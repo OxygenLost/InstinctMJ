@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.managers import ManagerTermBase, ObservationTermCfg, SceneEntityCfg
 from mjlab.utils.lab_api import math as math_utils
 

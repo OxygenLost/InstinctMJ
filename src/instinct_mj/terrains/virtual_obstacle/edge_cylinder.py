@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 import math
-import numpy as np
 import os
 import random
-import torch
-import trimesh
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from numpy.linalg import norm
 from typing import TYPE_CHECKING
 
 import cv2
+import numpy as np
+import torch
+import trimesh
+from mjlab.utils.lab_api import math as math_utils
+from numpy.linalg import norm
 from sklearn.cluster import DBSCAN
 
-from mjlab.utils.lab_api import math as math_utils
 from instinct_mj.utils.warp import convert_to_warp_mesh, raycast_mesh
-
 from instinct_mj.utils.warp.cylinder import CylinderSpatialGrid
 
 from .virtual_obstacle_base import VirtualObstacleBase
@@ -213,7 +212,9 @@ def _process_greedyconcat_component(
                 if max_dist < point_distance_threshold:
                     break
             if len(vertex_set) - split_idx >= min_points:
-                processed_edge_coords.append(np.concatenate([vertices[vertex_set[split_idx]], vertices[vertex_set[-1]]]))
+                processed_edge_coords.append(
+                    np.concatenate([vertices[vertex_set[split_idx]], vertices[vertex_set[-1]]])
+                )
             vertex_set = vertex_set[: split_idx + 1]
 
     if len(processed_edge_coords) == 0:
@@ -306,7 +307,7 @@ class EdgeCylinder(VirtualObstacleBase):
             else torch.zeros_like(points, device=self.device)
         )
 
-    def debug_vis(self, visualizer: "DebugVisualizer") -> None:
+    def debug_vis(self, visualizer: DebugVisualizer) -> None:
         if self.edges_pyt.numel() == 0:
             return
         marker_cfg = self.cfg.visualizer.markers["cylinder"]
@@ -634,7 +635,9 @@ class GreedyconcatEdgeCylinder(EdgeCylinder):
                         component_edges = E_pairs[component_edge_ids]
                         component_vertex_ids = np.flatnonzero(component_labels == label)
                         component_vertices = V[component_vertex_ids]
-                        local_edges = np.searchsorted(component_vertex_ids, component_edges).astype(np.int32, copy=False)
+                        local_edges = np.searchsorted(component_vertex_ids, component_edges).astype(
+                            np.int32, copy=False
+                        )
                         futures.append(
                             executor.submit(
                                 _process_greedyconcat_component,
@@ -857,7 +860,7 @@ class RayEdgeCylinder(VirtualObstacleBase):
             else torch.zeros_like(points, device=self.device)
         )
 
-    def debug_vis(self, visualizer: "DebugVisualizer") -> None:
+    def debug_vis(self, visualizer: DebugVisualizer) -> None:
         remaining_capacity = _remaining_debug_geom_capacity(visualizer)
         if self.edges_pyt.numel() != 0:
             cylinder_marker_cfg = self.cfg.visualizer.markers["cylinder"]

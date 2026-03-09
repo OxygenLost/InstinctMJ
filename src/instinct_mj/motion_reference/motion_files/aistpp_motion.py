@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-import torch
-import yaml
 from typing import TYPE_CHECKING
 
 import joblib
+import torch
+import yaml
 
 from instinct_mj.motion_reference import MotionSequence
 from instinct_mj.motion_reference.motion_files.amass_motion import AmassMotion

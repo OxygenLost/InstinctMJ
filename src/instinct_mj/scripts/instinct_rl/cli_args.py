@@ -35,7 +35,7 @@ def add_instinct_rl_args(parser: argparse.ArgumentParser):
     # )
 
 
-def parse_instinct_rl_cfg(task_name: str, args_cli: argparse.Namespace) -> "InstinctRlOnPolicyRunnerCfg":
+def parse_instinct_rl_cfg(task_name: str, args_cli: argparse.Namespace) -> InstinctRlOnPolicyRunnerCfg:
     """Parse configuration for Instinct-RL agent based on inputs.
 
     Args:
@@ -53,7 +53,7 @@ def parse_instinct_rl_cfg(task_name: str, args_cli: argparse.Namespace) -> "Inst
     return instinctrl_cfg
 
 
-def update_instinct_rl_cfg(agent_cfg: "InstinctRlOnPolicyRunnerCfg", args_cli: argparse.Namespace):
+def update_instinct_rl_cfg(agent_cfg: InstinctRlOnPolicyRunnerCfg, args_cli: argparse.Namespace):
     """Update configuration for Instinct-RL agent based on inputs.
 
     Args:

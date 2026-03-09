@@ -6,10 +6,11 @@ reward terms, joint positions, velocities, and torques during rollouts.
 
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
-import numpy as np
 from collections import defaultdict
 from multiprocessing import Process, Value
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Plotter:

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import copy
-from dataclasses import dataclass
 import inspect
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal
+
 import mujoco
 import numpy as np
 import torch
 import trimesh
-from typing import TYPE_CHECKING, Literal
-
 from mjlab.terrains import SubTerrainCfg as SubTerrainBaseCfg
 from mjlab.terrains import TerrainGenerator
 
@@ -159,9 +159,7 @@ class FiledTerrainGenerator(TerrainGenerator):
         self.terrain_mesh: trimesh.Trimesh | None = None
         # Keep original patch radii (including list-style radii) for
         # mesh flat-patch sampling after normalizing runtime cfg for mjlab core.
-        self._original_patch_radii_by_cfg_id: dict[
-            int, dict[str, float | list[float] | tuple[float, ...]]
-        ] = {}
+        self._original_patch_radii_by_cfg_id: dict[int, dict[str, float | list[float] | tuple[float, ...]]] = {}
         # Keep InstinctLab semantics: generator-level scales apply to every heightfield-like subterrain.
         runtime_cfg = copy.deepcopy(cfg)
         self._sync_subterrain_scales(runtime_cfg)
@@ -305,21 +303,25 @@ class FiledTerrainGenerator(TerrainGenerator):
 
         x_max, y_max = float(size[0]), float(size[1])
         tol = max(float(edge_tolerance), 1.0e-9)
-        strict_edge_mask = np.logical_or.reduce((
-            np.abs(vertices[:, 0] - 0.0) <= tol,
-            np.abs(vertices[:, 0] - x_max) <= tol,
-            np.abs(vertices[:, 1] - 0.0) <= tol,
-            np.abs(vertices[:, 1] - y_max) <= tol,
-        ))
+        strict_edge_mask = np.logical_or.reduce(
+            (
+                np.abs(vertices[:, 0] - 0.0) <= tol,
+                np.abs(vertices[:, 0] - x_max) <= tol,
+                np.abs(vertices[:, 1] - 0.0) <= tol,
+                np.abs(vertices[:, 1] - y_max) <= tol,
+            )
+        )
         border_vertices = vertices[strict_edge_mask]
         if border_vertices.size == 0:
             band = max(float(probe_width), tol)
-            fallback_mask = np.logical_or.reduce((
-                vertices[:, 0] <= band,
-                vertices[:, 0] >= x_max - band,
-                vertices[:, 1] <= band,
-                vertices[:, 1] >= y_max - band,
-            ))
+            fallback_mask = np.logical_or.reduce(
+                (
+                    vertices[:, 0] <= band,
+                    vertices[:, 0] >= x_max - band,
+                    vertices[:, 1] <= band,
+                    vertices[:, 1] >= y_max - band,
+                )
+            )
             border_vertices = vertices[fallback_mask]
         if border_vertices.size == 0:
             return float(np.min(vertices[:, 2]))

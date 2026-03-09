@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.managers import SceneEntityCfg
 from mjlab.sensor import ContactSensor
 

@@ -1,12 +1,12 @@
-from dataclasses import field, dataclass, MISSING
+from dataclasses import MISSING, dataclass, field
+
 """Base whole-body shadowing environment configuration used by G1 variants."""
 
 import os
 
-import mujoco
 import mjlab.envs.mdp as mdp
 import mjlab.sim as sim_utils
-from mjlab.entity import EntityCfg
+import mujoco
 from mjlab.managers import CurriculumTermCfg, EventTermCfg
 from mjlab.managers import ObservationGroupCfg as ObsGroupCfg
 from mjlab.managers import ObservationTermCfg as ObsTermCfg
@@ -16,8 +16,8 @@ from mjlab.managers import TerminationTermCfg as DoneTermCfg
 from mjlab.scene import SceneCfg as InteractiveSceneCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg, SensorCfg
 from mjlab.terrains import TerrainGeneratorCfg, TerrainImporterCfg
-from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 from mjlab.utils.noise import UniformNoiseCfg
+from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 
 import instinct_mj.envs.mdp as instinct_mdp
 import instinct_mj.tasks.shadowing.mdp as shadowing_mdp
@@ -37,7 +37,6 @@ from instinct_mj.monitors import (
     ShadowingVelocityMonitorTerm,
     TorqueMonitorSensorCfg,
 )
-from instinct_mj.motion_reference import MotionReferenceManagerCfg
 from instinct_mj.terrains.height_field import PerlinPlaneTerrainCfg
 
 
@@ -54,16 +53,28 @@ def _edit_shadowing_scene_spec(spec: mujoco.MjSpec) -> None:
     ground_rgb2 = (0.88, 0.88, 0.88)
     ground_mark_rgb = (0.80, 0.80, 0.80)
 
-    existing_skybox = next(
-        tex
-        for tex in spec.textures
-        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX
-    )
-    existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
-    existing_skybox.rgb1[:] = sky_rgb_top
-    existing_skybox.rgb2[:] = sky_rgb_horizon
-    existing_skybox.width = 512
-    existing_skybox.height = 3072
+    existing_skybox = None
+    for tex in spec.textures:
+        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            existing_skybox = tex
+            break
+
+    if existing_skybox is not None:
+        existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
+        existing_skybox.rgb1[:] = sky_rgb_top
+        existing_skybox.rgb2[:] = sky_rgb_horizon
+        existing_skybox.width = 512
+        existing_skybox.height = 3072
+    else:
+        TextureCfg(
+            name="shadowing_skybox",
+            type="skybox",
+            builtin="gradient",
+            rgb1=sky_rgb_top,
+            rgb2=sky_rgb_horizon,
+            width=512,
+            height=3072,
+        ).edit_spec(spec)
 
     TextureCfg(
         name=ground_texture_name,
@@ -99,92 +110,51 @@ class ShadowingSceneCfg(InteractiveSceneCfg):
     env_spacing: float = 4.0
 
     # terrain
-    terrain: object = field(default_factory=lambda: TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="plane",
-        terrain_generator=None,
-        physics_material=None,
-        visual_material=None,
-    ))
+    terrain: object = field(
+        default_factory=lambda: TerrainImporterCfg(
+            prim_path="/World/ground",
+            terrain_type="plane",
+            terrain_generator=None,
+            physics_material=None,
+            visual_material=None,
+        )
+    )
 
-    sensors: tuple[SensorCfg, ...] = field(default_factory=lambda: _make_shadowing_base_scene_sensors())
-
+    sensors: tuple[SensorCfg, ...] = field(
+        default_factory=lambda: (
+            ContactSensorCfg(
+                name="contact_forces",
+                primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="maxforce",
+                history_length=3,
+                track_air_time=True,
+            ),
+            ContactSensorCfg(
+                name="undesired_contact_forces",
+                primary=ContactMatch(
+                    mode="body",
+                    pattern=".*",
+                    entity="robot",
+                    exclude=(
+                        "left_ankle_roll_link",
+                        "right_ankle_roll_link",
+                        "left_wrist_yaw_link",
+                        "right_wrist_yaw_link",
+                    ),
+                ),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="netforce",
+                num_slots=1,
+                history_length=3,
+            ),
+        )
+    )
 
     def __post_init__(self):
         self.spec_fn = _edit_shadowing_scene_spec
-
-
-def make_shadowing_scene_entities(
-    *,
-    robot: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build whole-body shadowing scene entities without bridge fields."""
-    # robots
-    # robot reference articulation
-    # motion reference is configured as a sensor cfg ("motion_reference").
-    return {"robot": robot}
-
-
-def make_shadowing_scene_entities_with_reference(
-    *,
-    robot: EntityCfg,
-    robot_reference: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build whole-body shadowing scene entities for play/debug with reference robot."""
-    return {
-        "robot": robot,
-        "robot_reference": robot_reference,
-    }
-
-
-def _make_shadowing_contact_forces_sensor_cfg() -> ContactSensorCfg:
-    return ContactSensorCfg(
-        name="contact_forces",
-        primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="maxforce",
-        history_length=3,
-        track_air_time=True,
-    )
-
-
-def _make_shadowing_undesired_contact_sensor_cfg() -> ContactSensorCfg:
-    return ContactSensorCfg(
-        name="undesired_contact_forces",
-        primary=ContactMatch(
-            mode="body",
-            pattern=".*",
-            entity="robot",
-            exclude=(
-                "left_ankle_roll_link",
-                "right_ankle_roll_link",
-                "left_wrist_yaw_link",
-                "right_wrist_yaw_link",
-            ),
-        ),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="netforce",
-        num_slots=1,
-        history_length=3,
-    )
-
-
-def _make_shadowing_base_scene_sensors() -> tuple[SensorCfg, ...]:
-    return (
-        _make_shadowing_contact_forces_sensor_cfg(),
-        _make_shadowing_undesired_contact_sensor_cfg(),
-    )
-
-
-def make_shadowing_scene_sensors(
-    *,
-    motion_reference: MotionReferenceManagerCfg,
-) -> tuple[SensorCfg, ...]:
-    """Build whole-body shadowing scene sensors without bridge fields."""
-    # lights are applied in _edit_shadowing_scene_spec.
-    return _make_shadowing_base_scene_sensors() + (motion_reference,)
 
 
 def make_commands() -> dict[str, instinct_mdp.ShadowingCommandBaseCfg]:
@@ -240,7 +210,6 @@ def make_observations() -> dict[str, ObsGroupCfg]:
             params={"command_name": "rotation_ref_command"},
             noise=UniformNoiseCfg(n_min=-0.05, n_max=0.05),
         ),
-
         # proprioception
         # base_lin_vel = ObsTermCfg(
         #     func=mdp.base_lin_vel,
@@ -284,7 +253,6 @@ def make_observations() -> dict[str, ObsGroupCfg]:
             func=mdp.generated_commands,
             params={"command_name": "rotation_ref_command"},
         ),
-
         # proprioception
         "link_pos": ObsTermCfg(
             func=instinct_mdp.link_pos_b,
@@ -409,7 +377,6 @@ def shadowing_rewards_terms() -> dict[str, RewTermCfg | None]:
     }
 
 
-
 def make_events() -> dict[str, EventTermCfg]:
     """BeyondMimic events config such as termination conditions."""
     return {
@@ -423,7 +390,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "dynamic_friction_range": (0.3, 1.2),
             },
         ),
-
         "add_joint_default_pos": EventTermCfg(
             func=instinct_mdp.randomize_default_joint_pos,
             mode="startup",
@@ -434,7 +400,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "base_com": EventTermCfg(
             func=instinct_mdp.randomize_rigid_body_com,
             mode="startup",
@@ -447,7 +412,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 },
             },
         ),
-
         # interval
         "push_robot": EventTermCfg(
             func=mdp.push_by_setting_velocity,
@@ -464,7 +428,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 },
             },
         ),
-
         # for motion initialization and reset
         "match_motion_ref_with_scene": EventTermCfg(
             func=instinct_mdp.match_motion_ref_with_scene,
@@ -575,7 +538,6 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "print_reason": False,
             },
         ),
-
         "dataset_exhausted": DoneTermCfg(
             func=instinct_mdp.dataset_exhausted,
             time_out=True,
@@ -631,7 +593,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
         #         ),
         #     ),
         # )
-
         "dataset": MonitorTermCfg(
             func=MotionReferenceMonitorTerm,
             params=dict(

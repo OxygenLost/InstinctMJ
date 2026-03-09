@@ -5,6 +5,7 @@ from mjlab.managers import ActionTerm, SceneEntityCfg
 
 from . import joint_actions
 
+
 @dataclass(kw_only=True)
 class ActionOverridenJointPositionActionCfg(JointPositionActionCfg):
     """Configuration for the action overridden delayed joint position action term.

@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from mjlab.sensor import RayCastSensorCfg
-
 
 from .grouped_ray_caster import GroupedRayCaster
 

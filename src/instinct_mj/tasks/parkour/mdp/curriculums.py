@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import torch
 from mjlab.managers import SceneEntityCfg
+
 from instinct_mj.terrains import TerrainImporter
 
 if TYPE_CHECKING:

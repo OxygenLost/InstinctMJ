@@ -1,7 +1,7 @@
-import numpy as np
-import torch
 from collections import defaultdict
 
+import numpy as np
+import torch
 import warp as wp
 
 from .kernels import points_penetrate_cylinder_kernel

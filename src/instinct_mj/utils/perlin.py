@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Sequence
+
+import numpy as np
 
 
 def generate_perlin_noise_2d(shape: Sequence[int], res: Sequence[int]) -> np.ndarray:

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import math
-import torch
 from abc import abstractmethod
-from prettytable import PrettyTable
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.managers import ManagerBase, ManagerTermBase, SceneEntityCfg
+from prettytable import PrettyTable
 
 if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRLEnv
@@ -129,7 +129,7 @@ class MonitorManager(ManagerBase):
         # check if function raises NotImplementedError
         return True
 
-    def debug_vis(self, visualizer: "DebugVisualizer") -> None:
+    def debug_vis(self, visualizer: DebugVisualizer) -> None:
         """Render monitor debug visuals for terms that implement them."""
         for term in self._terms.values():
             term.debug_vis(visualizer)

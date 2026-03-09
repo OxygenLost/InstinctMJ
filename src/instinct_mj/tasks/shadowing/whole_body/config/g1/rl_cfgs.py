@@ -8,4 +8,4 @@ from .agents.instinct_rl_ppo_cfg import g1_shadowing_ppo_runner_cfg
 
 
 def g1_shadowing_instinct_rl_cfg() -> InstinctRlOnPolicyRunnerCfg:
-  return g1_shadowing_ppo_runner_cfg()
+    return g1_shadowing_ppo_runner_cfg()

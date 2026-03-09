@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import torch
 from mjlab.managers import CommandTerm, SceneEntityCfg
 from mjlab.utils.lab_api import math as math_utils
 
 import instinct_mj.utils.math as instinct_math_utils
 
 if TYPE_CHECKING:
-    from instinct_mj.envs import ManagerBasedRLEnv
-
-    from instinct_mj.motion_reference import MotionReferenceManager
     from mjlab.viewer.debug_visualizer import DebugVisualizer
+
+    from instinct_mj.envs import ManagerBasedRLEnv
+    from instinct_mj.motion_reference import MotionReferenceManager
 
     from .commands_cfg import (
         BaseHeightRefCommandCfg,
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 class _MjlabMarkerVisualizer:
     """Minimal marker helper using mjlab native DebugVisualizer primitives."""
 
-    def __init__(self, visualizer: "DebugVisualizer", cfg, num_envs: int):
+    def __init__(self, visualizer: DebugVisualizer, cfg, num_envs: int):
         self._visualizer = visualizer
         self._cfg = cfg
         self._num_envs = num_envs
@@ -160,9 +160,7 @@ class _MjlabMarkerVisualizer:
 
         # Default "pose"/"frame" behavior.
         if orientations_t is None:
-            raise ValueError(
-                f"Marker '{marker_name}' visualization requires orientations."
-            )
+            raise ValueError(f"Marker '{marker_name}' visualization requires orientations.")
         rot_mats = math_utils.matrix_from_quat(orientations_t)
         base_frame_scale = float(marker_scale[0])
         for idx in indices:
@@ -278,7 +276,7 @@ class ShadowingCommandBase(CommandTerm):
     def _debug_vis_callback(self, event):
         pass
 
-    def _debug_vis_impl(self, visualizer: "DebugVisualizer") -> None:
+    def _debug_vis_impl(self, visualizer: DebugVisualizer) -> None:
         if self.cfg.visualizer_cfg is None:
             return
         self._visualizer = _MjlabMarkerVisualizer(visualizer, self.cfg.visualizer_cfg, self.num_envs)
@@ -740,11 +738,7 @@ class ProjectedGravityRefCommand(ShadowingCommandBase):
         gravity = torch.as_tensor(gravity, device=self.device, dtype=torch.float)
         # Convert to direction vector
         gravity_dir = math_utils.normalize(gravity.unsqueeze(0)).squeeze(0)
-        self.GRAVITY_VEC_W = math_utils.normalize(
-            gravity.unsqueeze(0)
-        ).expand(
-            self.num_envs, -1
-        )  # (num_envs, 3)
+        self.GRAVITY_VEC_W = math_utils.normalize(gravity.unsqueeze(0)).expand(self.num_envs, -1)  # (num_envs, 3)
         # generate the command tensor buffer
         self._command = torch.zeros(
             (self.num_envs, self._motion_reference.num_frames, 3),
@@ -904,9 +898,9 @@ class HeadingRefCommand(ShadowingCommandBase):
         if self.cfg.current_state_command:
             self._current_state[env_ids] = (
                 math_utils.wrap_to_pi(
-                    math_utils.euler_xyz_from_quat(self._env.scene[self.cfg.asset_cfg.name].data.root_link_quat_w[env_ids])[
-                        2
-                    ]
+                    math_utils.euler_xyz_from_quat(
+                        self._env.scene[self.cfg.asset_cfg.name].data.root_link_quat_w[env_ids]
+                    )[2]
                 )
                 .unsqueeze(-1)
                 .unsqueeze(-1)
@@ -1282,9 +1276,7 @@ class JointPosErrRefCommand(ShadowingCommandBase):
         joint_pos_mask = self._motion_reference.data.joint_pos_mask[env_ids][:, :, self._joint_ids]
         self._command[env_ids, :] = joint_pos_ref - joint_pos.unsqueeze(1)
         self._command[env_ids] *= (
-            joint_pos_mask
-            * self._motion_reference.data.validity[env_ids].unsqueeze(-1)
-            * self._mask[env_ids]
+            joint_pos_mask * self._motion_reference.data.validity[env_ids].unsqueeze(-1) * self._mask[env_ids]
         )
 
 
@@ -1347,9 +1339,7 @@ class JointVelRefCommand(ShadowingCommandBase):
         joint_vel_mask = self._motion_reference.data.joint_vel_mask[env_ids][:, :, self._joint_ids]
         self._command[env_ids, :] = joint_vel_ref - self._default_joint_vel[env_ids].unsqueeze(1)
         self._command[env_ids, :] *= (
-            joint_vel_mask
-            * self._motion_reference.data.validity[env_ids].unsqueeze(-1)
-            * self._mask[env_ids]
+            joint_vel_mask * self._motion_reference.data.validity[env_ids].unsqueeze(-1) * self._mask[env_ids]
         )
         if self.cfg.current_state_command:
             joint_vel = self._env.scene[self.cfg.asset_cfg.name].data.joint_vel[env_ids][:, self._joint_ids]

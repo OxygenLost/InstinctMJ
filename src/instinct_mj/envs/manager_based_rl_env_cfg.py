@@ -8,14 +8,14 @@ from mjlab.viewer.viewer_config import ViewerConfig
 
 @dataclass
 class InstinctLabRLEnvCfg(ManagerBasedRlEnvCfg):
-  """Configuration for a reinforcement learning environment with the manager-based workflow."""
+    """Configuration for a reinforcement learning environment with the manager-based workflow."""
 
-  viewer: ViewerConfig = field(default_factory=ViewerConfig)
-  """Viewer Settings."""
+    viewer: ViewerConfig = field(default_factory=ViewerConfig)
+    """Viewer Settings."""
 
-  # monitor settings
-  monitors: object | None = None
-  """Monitor Settings.
+    # monitor settings
+    monitors: object | None = None
+    """Monitor Settings.
 
   Please refer to the `instinct_mj.monitors.MonitorManager` class for more details.
   """

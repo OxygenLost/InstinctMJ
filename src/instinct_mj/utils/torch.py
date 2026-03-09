@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import Sequence
+
+import torch
 
 
 class ConcatBatchTensor:

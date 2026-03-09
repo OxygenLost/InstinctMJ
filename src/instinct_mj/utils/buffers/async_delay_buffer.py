@@ -1,7 +1,7 @@
-import torch
 from collections.abc import Sequence
 from typing import Union
 
+import torch
 from mjlab.utils.buffers import DelayBuffer
 
 from .async_circular_buffer import AsyncCircularBuffer

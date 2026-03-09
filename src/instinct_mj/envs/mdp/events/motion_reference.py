@@ -1,21 +1,23 @@
 from __future__ import annotations
 
 import math
-import torch
-import tqdm
 from typing import TYPE_CHECKING
 
-from instinct_mj.motion_reference import MotionReferenceManager
+import torch
+import tqdm
 from mjlab.managers import SceneEntityCfg
 from mjlab.managers.event_manager import RecomputeLevel, requires_model_fields
 from mjlab.utils.lab_api import math as math_utils
 
+from instinct_mj.motion_reference import MotionReferenceManager
+
 if TYPE_CHECKING:
-    from instinct_mj.envs.mdp import BeyondMimicAdaptiveWeighting
-    from instinct_mj.motion_reference import MotionReferenceData
     from mjlab.entity import Entity as Articulation
     from mjlab.entity import Entity as RigidObject
     from mjlab.envs import ManagerBasedRlEnv as ManagerBasedEnv
+
+    from instinct_mj.envs.mdp import BeyondMimicAdaptiveWeighting
+    from instinct_mj.motion_reference import MotionReferenceData
 
 
 @requires_model_fields("body_gravcomp", recompute=RecomputeLevel.set_const_fixed)

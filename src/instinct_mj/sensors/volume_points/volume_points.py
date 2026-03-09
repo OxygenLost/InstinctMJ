@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 import mujoco
 import mujoco_warp as mjwarp
 import torch
-
 from mjlab.entity import Entity
 from mjlab.entity.data import compute_velocity_from_cvel
 from mjlab.sensor import Sensor
@@ -184,7 +183,9 @@ class VolumePoints(Sensor[VolumePointsData]):
             penetration_offset = virtual_obstacle.get_points_penetration_offset(
                 self._sensor_data.points_pos_w[env_ids].flatten(0, 2)
             )  # (N_*B*P, 3)
-            penetration_offset = penetration_offset.reshape(self._sensor_data.points_pos_w[env_ids].shape)  # (N_, B, P, 3)
+            penetration_offset = penetration_offset.reshape(
+                self._sensor_data.points_pos_w[env_ids].shape
+            )  # (N_, B, P, 3)
             penetration_depth = torch.norm(penetration_offset, dim=-1)  # (N_, B, P)
             # update the penetration offset if the depth is greater than the current depth
             mask = penetration_depth > penetration_depth_buf  # (N_, B, P)

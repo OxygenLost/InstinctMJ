@@ -1,2 +1,1 @@
 """BeyondMimic shadowing configs."""
-

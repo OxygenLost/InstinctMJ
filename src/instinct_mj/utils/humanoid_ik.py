@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import numpy as np
-import torch
 from typing import Dict, Literal
 
+import numpy as np
 import pytorch_kinematics as pk
-
+import torch
 from mjlab.utils.lab_api import math as math_utils
 
 import instinct_mj.utils.math as intinct_math

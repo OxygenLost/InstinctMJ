@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import scipy.interpolate as interpolate
-from typing import TYPE_CHECKING
 
 from instinct_mj.utils.perlin import generate_fractal_noise_2d
 

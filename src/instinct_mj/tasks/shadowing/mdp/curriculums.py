@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
+import torch
 from mjlab.managers.manager_base import ManagerTermBase
 
 if TYPE_CHECKING:

@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import mujoco_warp as mjwarp
 import torch
 import warp as wp
-
 from mjlab.utils.lab_api import math as math_utils
 
 from .grouped_ray_caster import GroupedRayCaster
 
 if TYPE_CHECKING:
-    from .grouped_ray_caster_camera_cfg import GroupedRayCasterCameraCfg
     from mjlab.viewer.debug_visualizer import DebugVisualizer
+
+    from .grouped_ray_caster_camera_cfg import GroupedRayCasterCameraCfg
 
 
 @dataclass
@@ -128,9 +128,7 @@ class GroupedRayCasterCamera(GroupedRayCaster):
 
     def __str__(self) -> str:
         """Returns: A string containing information about the instance."""
-        update_period_str = (
-            f"{self._update_period_s:.6f}" if self._update_period_s > 0.0 else "every sense()"
-        )
+        update_period_str = f"{self._update_period_s:.6f}" if self._update_period_s > 0.0 else "every sense()"
         return (
             f"Grouped-Ray-Caster-Camera @ '{self.cfg.name}': \n"
             f"\tupdate period (s)    : {update_period_str}\n"
@@ -359,9 +357,7 @@ class GroupedRayCasterCamera(GroupedRayCaster):
         ray_dirs_flat = self.ray_directions.reshape(-1, 3)
         ray_starts_w = math_utils.quat_apply(quat_w_expanded, ray_starts_flat).view(self._num_envs, self.num_rays, 3)
         ray_starts_w += pos_w.unsqueeze(1)
-        ray_directions_w = math_utils.quat_apply(quat_w_expanded, ray_dirs_flat).view(
-            self._num_envs, self.num_rays, 3
-        )
+        ray_directions_w = math_utils.quat_apply(quat_w_expanded, ray_dirs_flat).view(self._num_envs, self.num_rays, 3)
 
         pnt_torch = wp.to_torch(self._ray_pnt).view(self._num_envs, self._num_rays, 3)
         vec_torch = wp.to_torch(self._ray_vec).view(self._num_envs, self._num_rays, 3)
@@ -383,7 +379,6 @@ class GroupedRayCasterCamera(GroupedRayCaster):
                 stale_env_ids = stale_mask.nonzero(as_tuple=False).squeeze(-1)
                 for data_type in self.cfg.data_types:
                     stale_cached_outputs[data_type] = self._camera_data.output[data_type][stale_env_ids].clone()
-
 
         ray_directions_w = self._cached_world_rays
 
@@ -408,9 +403,7 @@ class GroupedRayCasterCamera(GroupedRayCaster):
             elif self.cfg.depth_clipping_behavior == "zero":
                 distance_to_image_plane[distance_to_image_plane > self.cfg.max_distance] = 0.0
                 distance_to_image_plane[torch.isnan(distance_to_image_plane)] = 0.0
-            self._camera_data.output["distance_to_image_plane"] = distance_to_image_plane.view(
-                -1, *self.image_shape, 1
-            )
+            self._camera_data.output["distance_to_image_plane"] = distance_to_image_plane.view(-1, *self.image_shape, 1)
 
         if "distance_to_camera" in self.cfg.data_types:
             if self.cfg.depth_clipping_behavior == "max":
@@ -427,7 +420,7 @@ class GroupedRayCasterCamera(GroupedRayCaster):
                 self._camera_data.output[data_type][stale_env_ids] = cached_output
         self._has_fresh_sense = True
 
-    def debug_vis(self, visualizer: "DebugVisualizer") -> None:
+    def debug_vis(self, visualizer: DebugVisualizer) -> None:
         """Debug visualization for the grouped ray-caster camera.
 
         Uses mjlab DebugVisualizer native API.
@@ -551,7 +544,9 @@ class GroupedRayCasterCamera(GroupedRayCaster):
         self._camera_data.intrinsic_matrices[:, 1, 1] = f_y
         self._camera_data.intrinsic_matrices[:, 1, 2] = c_y
 
-    def _compute_pinhole_rays_from_intrinsics(self, intrinsic_matrices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def _compute_pinhole_rays_from_intrinsics(
+        self, intrinsic_matrices: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute pinhole rays from intrinsic matrices in legacy camera convention."""
         # get image plane mesh grid
         grid = torch.meshgrid(
@@ -569,9 +564,9 @@ class GroupedRayCasterCamera(GroupedRayCaster):
         pix_in_cam_frame = torch.matmul(torch.inverse(intrinsic_matrices), pixels.T)
         # Convert from image camera frame (x-right, y-down, z-forward) to
         # robotics/world camera frame (x-forward, y-left, z-up) used by InstinctLab.
-        transform_vec = torch.tensor([1, -1, -1], device=self._device, dtype=intrinsic_matrices.dtype).unsqueeze(
-            0
-        ).unsqueeze(2)
+        transform_vec = (
+            torch.tensor([1, -1, -1], device=self._device, dtype=intrinsic_matrices.dtype).unsqueeze(0).unsqueeze(2)
+        )
         pix_in_cam_frame = pix_in_cam_frame[:, [2, 0, 1], :] * transform_vec
         # normalize ray directions
         ray_directions = (pix_in_cam_frame / torch.norm(pix_in_cam_frame, dim=1, keepdim=True)).permute(0, 2, 1)

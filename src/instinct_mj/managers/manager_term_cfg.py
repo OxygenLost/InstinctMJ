@@ -1,11 +1,13 @@
 """Configuration terms for different managers."""
 
 from __future__ import annotations
+
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import torch
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+
 
 @dataclass(kw_only=True)
 class MultiRewardCfg:
@@ -14,6 +16,7 @@ class MultiRewardCfg:
     """
 
     pass
+
 
 @dataclass(kw_only=True)
 class DummyRewardCfg:

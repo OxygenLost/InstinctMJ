@@ -4,6 +4,7 @@ from instinct_mj.managers import CommandTermCfg
 
 from .pose_velocity_command import PoseVelocityCommand
 
+
 @dataclass(kw_only=True)
 class PoseVelocityCommandCfg(CommandTermCfg):
     """Configuration for the position command generator."""

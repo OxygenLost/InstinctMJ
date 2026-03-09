@@ -6,12 +6,12 @@ output into standard AMASS npz format for downstream retargeting.
 
 from __future__ import annotations
 
-import numpy as np
 import os
-import tqdm
 
 import joblib
+import numpy as np
 import quaternion as npq
+import tqdm
 
 CAM_ROT = npq.from_euler_angles([0.0, -np.pi / 2, 0.0]) * npq.from_euler_angles([np.pi / 2, 0.0, 0.0])
 # CAM_ROT = npq.from_euler_angles([0., -np.pi/6, 0.]) * CAM_ROT # Add pitch if you see the video camera is not horizontal

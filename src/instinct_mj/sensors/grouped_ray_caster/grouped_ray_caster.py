@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING
 
 import torch
 import warp as wp
-from mujoco_warp import rays
-
 from mjlab.sensor import RayCastSensor
+from mujoco_warp import rays
 
 if TYPE_CHECKING:
     from .grouped_ray_caster_cfg import GroupedRayCasterCfg
@@ -133,8 +132,7 @@ class GroupedRayCaster(RayCastSensor):
 
         if len(allowed_geom_ids) == 0:
             raise RuntimeError(
-                "GroupedRayCaster mesh filter matched no MuJoCo geoms."
-                f"\n\tmesh_prim_paths: {self.cfg.mesh_prim_paths}"
+                f"GroupedRayCaster mesh filter matched no MuJoCo geoms.\n\tmesh_prim_paths: {self.cfg.mesh_prim_paths}"
             )
 
         allowed_geom_lut = torch.zeros(int(mj_model.ngeom), device=device, dtype=torch.bool)
@@ -384,7 +382,11 @@ class GroupedRayCaster(RayCastSensor):
                 if local_geom_name:
                     paths.add(f"/World/envs/env_0/Robot/{body_token}/{local_geom_name}")
 
-            if entity_lower in {"terrain", "ground"} or "ground" in full_body_name.lower() or "ground" in full_geom_name.lower():
+            if (
+                entity_lower in {"terrain", "ground"}
+                or "ground" in full_body_name.lower()
+                or "ground" in full_geom_name.lower()
+            ):
                 paths.add("/World/ground/")
                 paths.add(f"/World/ground/{body_token}")
                 if local_geom_name:

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import os
-import torch
 from typing import TYPE_CHECKING, Sequence, Tuple
 
 import pytorch_kinematics as pk
-
+import torch
 from mjlab.utils.lab_api import math as math_utils
 
 

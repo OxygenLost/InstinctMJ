@@ -1,7 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
 
 from collections.abc import Callable  # noqa: F401
+from dataclasses import dataclass
 from typing import Literal
 
 import torch
@@ -9,6 +9,7 @@ import torch
 from instinct_mj.motion_reference.motion_reference_cfg import MotionBufferCfg
 
 from .stay_still import StayStillMotion
+
 
 @dataclass(kw_only=True)
 class StayStillMotionCfg(MotionBufferCfg):

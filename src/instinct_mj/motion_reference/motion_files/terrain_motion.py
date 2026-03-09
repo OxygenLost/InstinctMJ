@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import os
-import torch
-import yaml
 from typing import TYPE_CHECKING, Sequence
 
 import joblib
+import torch
+import yaml
 
 from instinct_mj.motion_reference import MotionSequence
 from instinct_mj.motion_reference.motion_files.amass_motion import AmassMotion
 
 if TYPE_CHECKING:
-    from .terrain_motion_cfg import TerrainMotionCfg
     from mjlab.scene import Scene
+
+    from .terrain_motion_cfg import TerrainMotionCfg
 
 
 class TerrainMotion(AmassMotion):

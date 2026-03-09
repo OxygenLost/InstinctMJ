@@ -8,4 +8,4 @@ from .agents.beyondmimic_ppo_cfg import g1_beyondmimic_ppo_runner_cfg
 
 
 def g1_beyondmimic_instinct_rl_cfg() -> InstinctRlOnPolicyRunnerCfg:
-  return g1_beyondmimic_ppo_runner_cfg()
+    return g1_beyondmimic_ppo_runner_cfg()

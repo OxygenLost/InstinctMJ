@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import os
 import pickle as pkl
-import yaml
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import yaml
 from mjlab.utils.lab_api import math as math_utils
 
 from instinct_mj.motion_reference import MotionReferenceData, MotionReferenceState, MotionSequence
@@ -19,10 +19,9 @@ if TYPE_CHECKING:
     from .emberUcb_cfg import EmberUcbCfg
 
 import numpy as np
+import pytorch_kinematics as pk
 import torch
 import torch.multiprocessing as mp
-
-import pytorch_kinematics as pk
 
 
 class EmberUcb(AmassMotion):

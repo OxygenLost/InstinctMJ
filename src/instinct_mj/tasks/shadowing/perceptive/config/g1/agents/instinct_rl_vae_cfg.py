@@ -1,6 +1,5 @@
-from dataclasses import dataclass, field
 import os
-
+from dataclasses import dataclass, field
 
 from instinct_mj.envs.mdp.observations.exteroception import visualizable_image
 from instinct_mj.rl import (
@@ -26,9 +25,11 @@ class Conv2dHeadEncoderCfg:
 
         paddings: list = field(default_factory=lambda: [1, 1])
 
-        hidden_sizes: list = field(default_factory=lambda: [
-            32,
-        ])
+        hidden_sizes: list = field(
+            default_factory=lambda: [
+                32,
+            ]
+        )
 
         nonlinearity: str = "ReLU"
 
@@ -42,6 +43,7 @@ class Conv2dHeadEncoderCfg:
 
     depth_image: object = field(default_factory=lambda: DepthImageEncoderCfg())
 
+
 @dataclass(kw_only=True)
 class PolicyCfg(InstinctRlEncoderActorCriticCfg):
     init_noise_std: float = 1.0
@@ -52,48 +54,52 @@ class PolicyCfg(InstinctRlEncoderActorCriticCfg):
 
     activation: str = "elu"
 
-
     encoder_configs: object = field(default_factory=lambda: Conv2dHeadEncoderCfg())
 
     critic_encoder_configs: object | None = None
-
 
 
 @dataclass(kw_only=True)
 class VaePolicyCfg(InstinctRlEncoderVaeActorCriticCfg):
     encoder_configs: object = field(default_factory=lambda: Conv2dHeadEncoderCfg())
 
+    vae_encoder_kwargs: dict = field(
+        default_factory=lambda: {
+            "hidden_sizes": [256, 128, 64],
+            "nonlinearity": "ELU",
+        }
+    )
 
-    vae_encoder_kwargs: dict = field(default_factory=lambda: {
-        "hidden_sizes": [256, 128, 64],
-        "nonlinearity": "ELU",
-    })
-
-    vae_decoder_kwargs: dict = field(default_factory=lambda: {
-        "hidden_sizes": [512, 256, 128],
-        "nonlinearity": "ELU",
-    })
+    vae_decoder_kwargs: dict = field(
+        default_factory=lambda: {
+            "hidden_sizes": [512, 256, 128],
+            "nonlinearity": "ELU",
+        }
+    )
 
     vae_latent_size: int = 16
 
-    vae_input_subobs_components: list = field(default_factory=lambda: [
-        "parallel_latent_0_depth_image",  # based on the encoder_configs in Conv2dHeadEncoderCfg
-        # "projected_gravity",
-        # "base_ang_vel",
-        # "joint_pos",
-        # "joint_vel",
-        # "last_action",
-    ])
+    vae_input_subobs_components: list = field(
+        default_factory=lambda: [
+            "parallel_latent_0_depth_image",  # based on the encoder_configs in Conv2dHeadEncoderCfg
+            # "projected_gravity",
+            # "base_ang_vel",
+            # "joint_pos",
+            # "joint_vel",
+            # "last_action",
+        ]
+    )
 
-    vae_aux_subobs_components: list = field(default_factory=lambda: [
-        # "parallel_latent_0_depth_image",
-        "projected_gravity",
-        "base_ang_vel",
-        "joint_pos",
-        "joint_vel",
-        "last_action",
-    ])
-
+    vae_aux_subobs_components: list = field(
+        default_factory=lambda: [
+            # "parallel_latent_0_depth_image",
+            "projected_gravity",
+            "base_ang_vel",
+            "joint_pos",
+            "joint_vel",
+            "last_action",
+        ]
+    )
 
 
 @dataclass(kw_only=True)
@@ -122,7 +128,6 @@ class AlgorithmCfg(InstinctRlPpoAlgorithmCfg):
     desired_kl: float = 0.01
 
     max_grad_norm: float = 1.0
-
 
     teacher_act_prob: float = 0.2
 
@@ -183,10 +188,11 @@ class AlgorithmCfg(InstinctRlPpoAlgorithmCfg):
             "num_rewards": 1,
         }
     )
-    teacher_logdir: object = field(default_factory=lambda: os.path.expanduser(
-        "~/Data/instinct_mj_logs/instinct_rl/g1_perceptive_shadowing/20260111_103654_g1Perceptive_4MotionsKneelClimbStep1_concatMotionBins__GPU0_from20260108_032900"
-    ))
-
+    teacher_logdir: object = field(
+        default_factory=lambda: os.path.expanduser(
+            "~/Data/instinct_mj_logs/instinct_rl/g1_perceptive_shadowing/20260111_103654_g1Perceptive_4MotionsKneelClimbStep1_concatMotionBins__GPU0_from20260108_032900"
+        )
+    )
 
 
 @dataclass(kw_only=True)
@@ -212,9 +218,7 @@ class G1PerceptiveVaePPORunnerCfg(InstinctRlOnPolicyRunnerCfg):
 
     experiment_name: str = "g1_perceptive_vae"
 
-
     load_run: object | None = None
-
 
     def __post_init__(self):
         super().__post_init__()

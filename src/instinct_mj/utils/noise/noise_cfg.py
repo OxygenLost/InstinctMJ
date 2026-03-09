@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass, field
-from typing import ClassVar, Callable, Literal, Optional, Sequence
+from typing import Callable, ClassVar, Literal, Optional, Sequence
 
 import torch
 from typing_extensions import override
@@ -22,13 +22,9 @@ class NoiseCfg(abc.ABC):
     operation: Literal["add", "scale", "abs"] = "add"
 
     # Cache for converted tensors, keyed by device string.
-    _tensor_cache: dict[str, dict[str, torch.Tensor]] = field(
-        default_factory=dict, init=False, repr=False
-    )
+    _tensor_cache: dict[str, dict[str, torch.Tensor]] = field(default_factory=dict, init=False, repr=False)
 
-    def _get_cached_tensor(
-        self, name: str, value: NoiseParam, device: torch.device
-    ) -> torch.Tensor:
+    def _get_cached_tensor(self, name: str, value: NoiseParam, device: torch.device) -> torch.Tensor:
         """Get a cached tensor for the given parameter on the specified device."""
         device_key = str(device)
         if device_key not in self._tensor_cache:
@@ -133,9 +129,7 @@ class NoiseModelCfg:
 
 
 @dataclass(kw_only=True)
-class NoiseModelWithAdditiveBiasCfg(
-    NoiseModelCfg, class_type=noise_model.NoiseModelWithAdditiveBias
-):
+class NoiseModelWithAdditiveBiasCfg(NoiseModelCfg, class_type=noise_model.NoiseModelWithAdditiveBias):
     """Configuration for an additive Gaussian noise with bias model."""
 
     bias_noise_cfg: NoiseCfg | None = None
@@ -143,9 +137,7 @@ class NoiseModelWithAdditiveBiasCfg(
 
     def __post_init__(self):
         if self.bias_noise_cfg is None:
-            raise ValueError(
-                "bias_noise_cfg must be specified for NoiseModelWithAdditiveBiasCfg"
-            )
+            raise ValueError("bias_noise_cfg must be specified for NoiseModelWithAdditiveBiasCfg")
 
 
 ##
@@ -155,7 +147,10 @@ class NoiseModelWithAdditiveBiasCfg(
 
 @dataclass(kw_only=True)
 class ImageNoiseCfg:
-    func: Callable[[torch.Tensor, "ImageNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] | type[noise_model.ImageNoiseModel] = noise_model.ImageNoiseModel
+    func: (
+        Callable[[torch.Tensor, ImageNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor]
+        | type[noise_model.ImageNoiseModel]
+    ) = noise_model.ImageNoiseModel
     """The callable function to apply noise to the image.
     The function should take three arguments:
       - the image in shape (N_, H, W, C) where N_ = len(env_ids)
@@ -170,7 +165,9 @@ class ImageNoiseCfg:
 class DepthContourNoiseCfg(ImageNoiseCfg):
     contour_threshold: float = 2.0
     maxpool_kernel_size: int = 1
-    func: Callable[[torch.Tensor, "DepthContourNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.depth_contour_noise
+    func: Callable[[torch.Tensor, DepthContourNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.depth_contour_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -179,7 +176,9 @@ class DepthArtifactNoiseCfg(ImageNoiseCfg):
     artifacts_height_mean_std: list[float] = field(default_factory=lambda: [2, 0.5])
     artifacts_width_mean_std: list[float] = field(default_factory=lambda: [2, 0.5])
     noise_value: float = 0.0
-    func: Callable[[torch.Tensor, "DepthArtifactNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.depth_artifact_noise
+    func: Callable[[torch.Tensor, DepthArtifactNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.depth_artifact_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -197,7 +196,9 @@ class DepthSteroNoiseCfg(ImageNoiseCfg):
     stero_half_block_spark_prob: float = 0.02
     stero_half_block_value: int = 3000
 
-    func: Callable[[torch.Tensor, "DepthSteroNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.depth_stero_noise
+    func: Callable[[torch.Tensor, DepthSteroNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.depth_stero_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -208,26 +209,28 @@ class DepthSkyArtifactNoiseCfg(ImageNoiseCfg):
     sky_artifacts_height_mean_std: list[float] = field(default_factory=lambda: [2, 3.2])
     sky_artifacts_width_mean_std: list[float] = field(default_factory=lambda: [2, 3.2])
 
-    func: Callable[[torch.Tensor, "DepthSkyArtifactNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.depth_sky_artifact_noise
+    func: Callable[[torch.Tensor, DepthSkyArtifactNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.depth_sky_artifact_noise
+    )
 
 
 @dataclass(kw_only=True)
 class LatencyNoiseCfg(ImageNoiseCfg):
     history_length: int = 5
 
-    sample_frequency: Optional[str] = None
+    sample_frequency: str | None = None
     sample_frequency_steps: int = 50
     sample_frequency_steps_offset: int = 5
 
     sample_probability: float = 0.1
 
-    latency_distribution: Optional[str] = "constant"
+    latency_distribution: str | None = "constant"
     latency_range: tuple[int, int] = (1, history_length)
 
     latency_mean_std: tuple[float, float] = (3, 1)
 
     latency_choices: list[int] = field(default_factory=lambda: [1, 2, 3, 4, 5])
-    latency_choices_probabilities: Optional[list[float]] = None
+    latency_choices_probabilities: list[float] | None = None
 
     latency_steps: int = 5
 
@@ -241,7 +244,9 @@ class DepthNormalizationCfg(ImageNoiseCfg):
     depth_range: tuple[float, float] = (0.0, 10.0)
     normalize: bool = True
     output_range: tuple[float, float] = (0.0, 1.0)
-    func: Callable[[torch.Tensor, "DepthNormalizationCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.depth_normalization
+    func: Callable[[torch.Tensor, DepthNormalizationCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.depth_normalization
+    )
 
 
 @dataclass(kw_only=True)
@@ -250,7 +255,9 @@ class CropAndResizeCfg(ImageNoiseCfg):
 
     crop_region: tuple[int, int, int, int] = (0, 0, 0, 0)
     resize_shape: tuple[int, int] | None = None
-    func: Callable[[torch.Tensor, "CropAndResizeCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.crop_and_resize
+    func: Callable[[torch.Tensor, CropAndResizeCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.crop_and_resize
+    )
 
 
 @dataclass(kw_only=True)
@@ -258,7 +265,9 @@ class BlindSpotNoiseCfg(ImageNoiseCfg):
     """Configuration for adding blind spot noise (zeroing out regions of the image)."""
 
     crop_region: tuple[int, int, int, int] = (0, 0, 0, 0)
-    func: Callable[[torch.Tensor, "BlindSpotNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.blind_spot_noise
+    func: Callable[[torch.Tensor, BlindSpotNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.blind_spot_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -267,7 +276,9 @@ class GaussianBlurNoiseCfg(ImageNoiseCfg):
 
     kernel_size: int = 3
     sigma: float = 1.0
-    func: Callable[[torch.Tensor, "GaussianBlurNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.gaussian_blur_noise
+    func: Callable[[torch.Tensor, GaussianBlurNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.gaussian_blur_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -277,7 +288,9 @@ class RandomGaussianNoiseCfg(ImageNoiseCfg):
     probability: float = 0.1
     noise_mean: float = 0.0
     noise_std: float = 1.0
-    func: Callable[[torch.Tensor, "RandomGaussianNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.random_gaussian_noise
+    func: Callable[[torch.Tensor, RandomGaussianNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.random_gaussian_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -287,7 +300,9 @@ class RangeBasedGaussianNoiseCfg(ImageNoiseCfg):
     min_value: float | None = None
     max_value: float | None = None
     noise_std: float = 1.0
-    func: Callable[[torch.Tensor, "RangeBasedGaussianNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.range_based_gaussian_noise
+    func: Callable[[torch.Tensor, RangeBasedGaussianNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.range_based_gaussian_noise
+    )
 
 
 @dataclass(kw_only=True)
@@ -306,4 +321,6 @@ class StereoTooCloseNoiseCfg(ImageNoiseCfg):
     half_block_value: float = 30
     half_block_spark_prob: float = 0.02
 
-    func: Callable[[torch.Tensor, "StereoTooCloseNoiseCfg", torch.Tensor | Sequence[int]], torch.Tensor] = noise_model.stereo_too_close_noise
+    func: Callable[[torch.Tensor, StereoTooCloseNoiseCfg, torch.Tensor | Sequence[int]], torch.Tensor] = (
+        noise_model.stereo_too_close_noise
+    )

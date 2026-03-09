@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import logging
 import os
-import yaml
 from collections.abc import Sequence
 from copy import copy
 from typing import TYPE_CHECKING, Callable
 
-import logging
-
+import yaml
 from mjlab.utils.lab_api import math as math_utils
 
 from .motion_reference_data import MotionReferenceData, MotionReferenceState

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+
 from instinct_mj.utils.noise import ImageNoiseCfg, NoiseCfg
 
 

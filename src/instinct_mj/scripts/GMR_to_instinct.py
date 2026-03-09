@@ -13,10 +13,9 @@ import os
 import pickle as pkl
 
 import numpy as np
+import pytorch_kinematics as pk
 import torch
 import tqdm
-
-import pytorch_kinematics as pk
 
 
 def load_GMR_src_file(src_file):

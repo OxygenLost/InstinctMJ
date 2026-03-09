@@ -2,19 +2,14 @@ from __future__ import annotations
 
 import csv
 import os
-import torch
-from torch.distributions import Multinomial
 from typing import TYPE_CHECKING, Sequence
 
-from mjlab.actuator import (
-    BuiltinPositionActuator,
-    BuiltinVelocityActuator,
-    XmlPositionActuator,
-    XmlVelocityActuator,
-)
+import torch
+from mjlab.actuator import BuiltinPositionActuator, BuiltinVelocityActuator, XmlPositionActuator, XmlVelocityActuator
 from mjlab.actuator.actuator import TransmissionType
-from mjlab.utils.lab_api import math as math_utils
 from mjlab.managers import SceneEntityCfg
+from mjlab.utils.lab_api import math as math_utils
+from torch.distributions import Multinomial
 
 from instinct_mj.motion_reference.utils import (
     get_base_position_distance,
@@ -329,14 +324,16 @@ class BodyStatMonitorTerm(MonitorTerm):
             / dt
         )
         self._body_acc_max[:] = (
-            torch.norm(asset.data.body_link_vel_w[:, self.cfg.params["asset_cfg"].body_ids] - self._last_body_vel, dim=-1)
+            torch.norm(
+                asset.data.body_link_vel_w[:, self.cfg.params["asset_cfg"].body_ids] - self._last_body_vel, dim=-1
+            )
             .max(dim=-1)
             .values
             / dt
         )
-        self._body_vel[:] = torch.norm(asset.data.body_link_vel_w[:, self.cfg.params["asset_cfg"].body_ids], dim=-1).mean(
-            dim=-1
-        )
+        self._body_vel[:] = torch.norm(
+            asset.data.body_link_vel_w[:, self.cfg.params["asset_cfg"].body_ids], dim=-1
+        ).mean(dim=-1)
         self._body_vel_max[:] = (
             torch.norm(asset.data.body_link_vel_w[:, self.cfg.params["asset_cfg"].body_ids], dim=-1).max(dim=-1).values
         )

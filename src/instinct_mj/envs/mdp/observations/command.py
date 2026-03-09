@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING
 
+import torch
 from mjlab.envs import ManagerBasedRlEnv as ManagerBasedEnv
 
 if TYPE_CHECKING:

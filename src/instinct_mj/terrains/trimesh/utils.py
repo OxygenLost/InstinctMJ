@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Callable
+
 import numpy as np
 import trimesh
-from collections.abc import Callable
 
 
 def crop_terrain_mesh_aabb(

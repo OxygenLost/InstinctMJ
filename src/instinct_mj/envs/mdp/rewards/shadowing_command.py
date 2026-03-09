@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Literal
 
+import torch
 from mjlab.envs import ManagerBasedRlEnv as ManagerBasedRLEnv
 from mjlab.managers import SceneEntityCfg
 from mjlab.utils.lab_api import math as math_utils

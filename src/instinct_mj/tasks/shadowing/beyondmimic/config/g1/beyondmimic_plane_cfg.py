@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
-from pathlib import Path
-
-import yaml
 
 import mjlab.envs.mdp as mdp
+import yaml
 from mjlab.envs import ManagerBasedRlEnvCfg
-from mjlab.managers import CurriculumTermCfg
-from mjlab.managers import EventTermCfg
-from mjlab.managers import ObservationGroupCfg
-from mjlab.managers import ObservationTermCfg
-from mjlab.managers import RewardTermCfg
-from mjlab.managers import SceneEntityCfg
-from mjlab.managers import TerminationTermCfg
+from mjlab.managers import (
+    CurriculumTermCfg,
+    EventTermCfg,
+    ObservationGroupCfg,
+    ObservationTermCfg,
+    RewardTermCfg,
+    SceneEntityCfg,
+    TerminationTermCfg,
+)
 from mjlab.scene import SceneCfg
+from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.terrains import TerrainImporterCfg
 from mjlab.utils.noise import UniformNoiseCfg
 from mjlab.utils.spec_config import CollisionCfg
@@ -23,11 +24,7 @@ from mjlab.viewer.viewer_config import ViewerConfig
 
 import instinct_mj.envs.mdp as instinct_mdp
 import instinct_mj.tasks.shadowing.beyondmimic.beyondmimic_env_cfg as beyondmimic_cfg
-from instinct_mj.assets.unitree_g1 import (
-    G1_29DOF_TORSOBASE_POPSICLE_CFG,
-    G1_MJCF_PATH,
-    beyondmimic_action_scale,
-)
+from instinct_mj.assets.unitree_g1 import G1_29DOF_TORSOBASE_POPSICLE_CFG, G1_MJCF_PATH, beyondmimic_action_scale
 from instinct_mj.envs.manager_based_rl_env_cfg import InstinctLabRLEnvCfg
 from instinct_mj.monitors import (
     ActuatorMonitorTerm,
@@ -44,28 +41,14 @@ from instinct_mj.monitors import (
 from instinct_mj.motion_reference import MotionReferenceManagerCfg
 from instinct_mj.motion_reference.motion_files.amass_motion_cfg import AmassMotionCfg as AmassMotionCfgBase
 from instinct_mj.motion_reference.utils import motion_interpolate_bilinear
-from instinct_mj.utils.motion_validation import resolve_datasets_root
 
 G1_CFG = G1_29DOF_TORSOBASE_POPSICLE_CFG
-_DATASETS_ROOT = resolve_datasets_root()
-_UNDESIRED_CONTACT_SENSOR_NAME = "undesired_contact_forces"
-_MOTION_DATASET_DIR = Path(
-    os.path.expanduser(
-        os.environ.get(
-            "INSTINCT_BEYONDMIMIC_MOTION_PATH",
-            str(_DATASETS_ROOT / "lafan1_gmr_unitree_g1_instinct"),
-        )
-    )
-)
 
 # Motion configuration
 MOTION_NAME = "LafanKungfu1"
 _hacked_selected_file_ = "fightAndSports1_subject1_retargetted.npz"
 MOTION_NAME = "LafanSprint1"
-_hacked_selected_file_ = os.environ.get(
-    "INSTINCT_BEYONDMIMIC_SELECTED_FILE",
-    "sprint1_subject2_retargetted.npz",
-)
+_hacked_selected_file_ = "sprint1_subject2_retargetted.npz"
 
 with open(f"/tmp/{MOTION_NAME}.yaml", "w") as f:
     yaml.dump(
@@ -76,93 +59,55 @@ with open(f"/tmp/{MOTION_NAME}.yaml", "w") as f:
         },
         f,
     )
-
-
-def _make_amass_motion_cfg() -> AmassMotionCfgBase:
-    """AMASS motion configuration for BeyondMimic."""
-
-    return AmassMotionCfgBase(
-        path=str(_MOTION_DATASET_DIR),
-        retargetting_func=None,
-        filtered_motion_selection_filepath=f"/tmp/{MOTION_NAME}.yaml",
-        motion_start_from_middle_range=[0.0, 0.8],
-        motion_start_height_offset=0.0,
-        ensure_link_below_zero_ground=False,
-        buffer_device="output_device",
-        motion_interpolate_func=motion_interpolate_bilinear,
-        velocity_estimation_method="frontbackward",
-        motion_bin_length_s=1.0,
-    )
-
-
-def _make_motion_reference_cfg(*, debug_vis: bool) -> MotionReferenceManagerCfg:
-    return MotionReferenceManagerCfg(
-        name="motion_reference",
-        entity_name="robot",
-        robot_model_path=G1_MJCF_PATH,
-        debug_vis=debug_vis,
-        reference_entity_name="robot_reference" if debug_vis else None,
-        link_of_interests=[
-            "pelvis",
-            "torso_link",
-            "left_shoulder_roll_link",
-            "right_shoulder_roll_link",
-            "left_elbow_link",
-            "right_elbow_link",
-            "left_wrist_yaw_link",
-            "right_wrist_yaw_link",
-            "left_hip_roll_link",
-            "right_hip_roll_link",
-            "left_knee_link",
-            "right_knee_link",
-            "left_ankle_roll_link",
-            "right_ankle_roll_link",
-        ],
-        symmetric_augmentation_link_mapping=None,
-        symmetric_augmentation_joint_mapping=None,
-        symmetric_augmentation_joint_reverse_buf=None,
-        frame_interval_s=0.0,
-        update_period=0.02,
-        num_frames=1,
-        visualizing_robot_offset=(0.0, 1.5, 0.0),
-        visualizing_robot_from="reference_frame",
-        motion_buffers={
-            MOTION_NAME: _make_amass_motion_cfg(),
-        },
-        mp_split_method="Even",
-    )
-
-
-def _make_scene_cfg(*, play: bool, motion_reference_cfg: MotionReferenceManagerCfg) -> SceneCfg:
-    if play:
-        robot_reference = deepcopy(G1_CFG)
-        # Keep reference robot visible but remove all physical contacts to avoid launch/jitter artifacts.
-        robot_reference.collisions = (
-            CollisionCfg(
-                geom_names_expr=(".*",),
-                contype=0,
-                conaffinity=0,
-            ),
-        )
-        entities = beyondmimic_cfg.make_beyondmimic_scene_entities_with_reference(
-            robot=deepcopy(G1_CFG),
-            robot_reference=robot_reference,
-        )
-    else:
-        entities = beyondmimic_cfg.make_beyondmimic_scene_entities(
-            robot=deepcopy(G1_CFG),
-        )
-    sensors = beyondmimic_cfg.make_beyondmimic_scene_sensors(
-        motion_reference=motion_reference_cfg,
-    )
-
-    return beyondmimic_cfg.BeyondMimicSceneCfg(
-        num_envs=1 if play else 4096,
-        env_spacing=2.5 if play else 4.0,
-        terrain=TerrainImporterCfg(terrain_type="plane"),
-        entities=entities,
-        sensors=sensors,
-    )
+motion_reference_cfg = MotionReferenceManagerCfg(
+    name="motion_reference",
+    entity_name="robot",
+    robot_model_path=G1_MJCF_PATH,
+    debug_vis=False,
+    reference_entity_name=None,
+    link_of_interests=[
+        "pelvis",
+        "torso_link",
+        "left_shoulder_roll_link",
+        "right_shoulder_roll_link",
+        "left_elbow_link",
+        "right_elbow_link",
+        "left_wrist_yaw_link",
+        "right_wrist_yaw_link",
+        "left_hip_roll_link",
+        "right_hip_roll_link",
+        "left_knee_link",
+        "right_knee_link",
+        "left_ankle_roll_link",
+        "right_ankle_roll_link",
+    ],
+    symmetric_augmentation_link_mapping=None,
+    symmetric_augmentation_joint_mapping=None,
+    symmetric_augmentation_joint_reverse_buf=None,
+    frame_interval_s=0.0,
+    update_period=0.02,
+    num_frames=1,
+    visualizing_robot_offset=(0.0, 1.5, 0.0),
+    visualizing_robot_from="reference_frame",
+    motion_buffers={
+        MOTION_NAME: AmassMotionCfgBase(
+            path=os.path.expanduser("~/Xyk/Datasets/UbisoftLAFAN1_GMR_g1_29dof_torsoBase_retargetted_instinctnpz"),
+            retargetting_func=None,
+            filtered_motion_selection_filepath=f"/tmp/{MOTION_NAME}.yaml",
+            motion_start_from_middle_range=[0.0, 0.8],
+            motion_start_height_offset=0.0,
+            ensure_link_below_zero_ground=False,
+            buffer_device="output_device",
+            motion_interpolate_func=motion_interpolate_bilinear,
+            velocity_estimation_method="frontbackward",
+            motion_bin_length_s=1.0,
+        ),
+    },
+    mp_split_method="Even",
+)
+motion_reference_cfg_play = deepcopy(motion_reference_cfg)
+motion_reference_cfg_play.debug_vis = True
+motion_reference_cfg_play.reference_entity_name = "robot_reference"
 
 
 def _actions_cfg() -> dict[str, mdp.JointPositionActionCfg]:
@@ -288,11 +233,6 @@ def _observations_cfg(link_of_interests: list[str]) -> dict[str, ObservationGrou
             concatenate_terms=False,
         ),
     }
-
-
-def _rewards_cfg() -> dict[str, RewardTermCfg | None]:
-    # Inherits rewards from beyondmimic_env_cfg.
-    return deepcopy(beyondmimic_cfg.make_beyondmimic_rewards())
 
 
 def _events_cfg() -> dict[str, EventTermCfg | None]:
@@ -564,86 +504,96 @@ def _monitors_cfg(*, play: bool) -> dict[str, MonitorTermCfg]:
     return monitors
 
 
-def _viewer_cfg(play: bool) -> ViewerConfig:
-    if not play:
-        return ViewerConfig()
-    return ViewerConfig(
-        lookat=(0.0, 0.75, 0.0),
-        distance=4.1231,
-        elevation=14.0362,
-        azimuth=0.0,
-        origin_type=ViewerConfig.OriginType.ASSET_ROOT,
-        entity_name="robot",
-    )
-
-
-def _apply_play_overrides(cfg: InstinctLabRLEnvCfg, motion_reference_cfg: MotionReferenceManagerCfg) -> None:
-    # spawn the robot randomly in the grid (instead of their terrain levels)
-    cfg.scene.terrain.max_init_terrain_level = None
-    # reduce the number of terrains to save memory
-    if cfg.scene.terrain.terrain_generator is not None:
-        cfg.scene.terrain.terrain_generator.num_rows = 3
-        cfg.scene.terrain.terrain_generator.num_cols = 3
-        cfg.scene.terrain.terrain_generator.curriculum = False
-
-    motion_reference_cfg.symmetric_augmentation_joint_mapping = None
-    motion_reference_cfg.visualizing_marker_types = ["relative_links"]
-    cfg.curriculum["beyond_adaptive_sampling"] = None
-    cfg.events["push_robot"] = None
-    cfg.events["bin_fail_counter_smoothing"] = None
-
-    # If you want to play the motion from start and till the end, uncomment the following lines
-    cfg.episode_length_s = 6000.0
-    motion_buffer = motion_reference_cfg.motion_buffers[MOTION_NAME]
-    motion_buffer.motion_start_from_middle_range = [0.0, 0.0]
-    motion_buffer.motion_bin_length_s = None
-
-    # enable print_reason option in the termination terms
-    for term in cfg.terminations.values():
-        if "print_reason" in term.params:
-            term.params["print_reason"] = True
-
-    # enable debug_vis option in commands
-    cfg.commands["position_ref_command"].debug_vis = True
-    cfg.commands["rotation_ref_command"].debug_vis = True
-    cfg.commands["joint_pos_ref_command"].debug_vis = True
-    cfg.commands["joint_vel_ref_command"].debug_vis = True
-
-
-def _build_run_name(cfg: InstinctLabRLEnvCfg) -> str:
-    policy_terms = cfg.observations["policy"].terms
-    return "".join(
-        [
-            "G1BeyondMimic",
-            (
-                "_linVelObs"
-                if "base_lin_vel" in policy_terms
-                and policy_terms["base_lin_vel"].scale != 0.0
-                else ""
-            ),
-            f"_{MOTION_NAME}",
-            ("_noPush" if cfg.events["push_robot"] is None else ""),
-            ("_noContactPenalty" if cfg.rewards["undesired_contacts"] is None else ""),
-            "_GmrMotion",
-        ]
-    )
-
-
 def g1_beyondmimic_plane_env_cfg(*, play: bool = False) -> ManagerBasedRlEnvCfg:
-    motion_reference_cfg = _make_motion_reference_cfg(debug_vis=play)
-    scene = _make_scene_cfg(play=play, motion_reference_cfg=motion_reference_cfg)
+    active_motion_reference_cfg = deepcopy(motion_reference_cfg_play if play else motion_reference_cfg)
+    if play:
+        robot_reference = deepcopy(G1_CFG)
+        # Keep reference robot visible but remove all physical contacts to avoid launch/jitter artifacts.
+        robot_reference.collisions = (
+            CollisionCfg(
+                geom_names_expr=(".*",),
+                contype=0,
+                conaffinity=0,
+            ),
+        )
+        entities = {
+            "robot": deepcopy(G1_CFG),
+            "robot_reference": robot_reference,
+        }
+    else:
+        entities = {"robot": deepcopy(G1_CFG)}
+    scene = beyondmimic_cfg.BeyondMimicSceneCfg(
+        num_envs=1 if play else 4096,
+        env_spacing=2.5 if play else 4.0,
+        terrain=TerrainImporterCfg(terrain_type="plane"),
+        entities=entities,
+        sensors=(
+            ContactSensorCfg(
+                name="undesired_contact_forces",
+                primary=ContactMatch(
+                    mode="body",
+                    pattern=(
+                        "pelvis",
+                        "left_hip_pitch_link",
+                        "left_hip_roll_link",
+                        "left_hip_yaw_link",
+                        "left_knee_link",
+                        "left_ankle_pitch_link",
+                        "right_hip_pitch_link",
+                        "right_hip_roll_link",
+                        "right_hip_yaw_link",
+                        "right_knee_link",
+                        "right_ankle_pitch_link",
+                        "waist_yaw_link",
+                        "waist_roll_link",
+                        "torso_link",
+                        "left_shoulder_pitch_link",
+                        "left_shoulder_roll_link",
+                        "left_shoulder_yaw_link",
+                        "left_elbow_link",
+                        "left_wrist_roll_link",
+                        "left_wrist_pitch_link",
+                        "right_shoulder_pitch_link",
+                        "right_shoulder_roll_link",
+                        "right_shoulder_yaw_link",
+                        "right_elbow_link",
+                        "right_wrist_roll_link",
+                        "right_wrist_pitch_link",
+                    ),
+                    entity="robot",
+                ),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="netforce",
+                history_length=3,
+                num_slots=1,
+            ),
+            active_motion_reference_cfg,
+        ),
+    )
 
     cfg = InstinctLabRLEnvCfg(
         scene=scene,
         actions=_actions_cfg(),
-        observations=_observations_cfg(link_of_interests=list(motion_reference_cfg.link_of_interests)),
+        observations=_observations_cfg(link_of_interests=list(active_motion_reference_cfg.link_of_interests)),
         commands=_commands_cfg(),
-        rewards=_rewards_cfg(),
+        rewards=deepcopy(beyondmimic_cfg.make_beyondmimic_rewards()),
         events=_events_cfg(),
         curriculum=_curriculum_cfg(),
         terminations=_terminations_cfg(),
         monitors=_monitors_cfg(play=play),
-        viewer=_viewer_cfg(play),
+        viewer=(
+            ViewerConfig()
+            if not play
+            else ViewerConfig(
+                lookat=(0.0, 0.75, 0.0),
+                distance=4.1231,
+                elevation=14.0362,
+                azimuth=0.0,
+                origin_type=ViewerConfig.OriginType.ASSET_ROOT,
+                entity_name="robot",
+            )
+        ),
         decimation=4,
         episode_length_s=10.0,
     )
@@ -662,13 +612,52 @@ def g1_beyondmimic_plane_env_cfg(*, play: bool = False) -> ManagerBasedRlEnvCfg:
     cfg.sim.mujoco.ccd_iterations = 80
 
     assert (
-        len(list(motion_reference_cfg.motion_buffers.keys())) == 1
+        len(list(active_motion_reference_cfg.motion_buffers.keys())) == 1
     ), "Only support single motion buffer for now"
 
     if play:
-        _apply_play_overrides(cfg, motion_reference_cfg)
+        # spawn the robot randomly in the grid (instead of their terrain levels)
+        cfg.scene.terrain.max_init_terrain_level = None
+        # reduce the number of terrains to save memory
+        if cfg.scene.terrain.terrain_generator is not None:
+            cfg.scene.terrain.terrain_generator.num_rows = 3
+            cfg.scene.terrain.terrain_generator.num_cols = 3
+            cfg.scene.terrain.terrain_generator.curriculum = False
 
-    cfg.run_name = _build_run_name(cfg)
+        active_motion_reference_cfg.symmetric_augmentation_joint_mapping = None
+        active_motion_reference_cfg.visualizing_marker_types = ["relative_links"]
+        cfg.curriculum["beyond_adaptive_sampling"] = None
+        cfg.events["push_robot"] = None
+        cfg.events["bin_fail_counter_smoothing"] = None
+
+        # If you want to play the motion from start and till the end, uncomment the following lines
+        cfg.episode_length_s = 6000.0
+        motion_buffer = active_motion_reference_cfg.motion_buffers[MOTION_NAME]
+        motion_buffer.motion_start_from_middle_range = [0.0, 0.0]
+        motion_buffer.motion_bin_length_s = None
+
+        # enable print_reason option in the termination terms
+        for term in cfg.terminations.values():
+            if "print_reason" in term.params:
+                term.params["print_reason"] = True
+
+        # enable debug_vis option in commands
+        cfg.commands["position_ref_command"].debug_vis = True
+        cfg.commands["rotation_ref_command"].debug_vis = True
+        cfg.commands["joint_pos_ref_command"].debug_vis = True
+        cfg.commands["joint_vel_ref_command"].debug_vis = True
+
+    policy_terms = cfg.observations["policy"].terms
+    cfg.run_name = "".join(
+        [
+            "G1BeyondMimic",
+            ("_linVelObs" if "base_lin_vel" in policy_terms and policy_terms["base_lin_vel"].scale != 0.0 else ""),
+            f"_{MOTION_NAME}",
+            ("_noPush" if cfg.events["push_robot"] is None else ""),
+            ("_noContactPenalty" if cfg.rewards["undesired_contacts"] is None else ""),
+            "_GmrMotion",
+        ]
+    )
     return cfg
 
 

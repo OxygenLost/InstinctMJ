@@ -4,13 +4,14 @@ import os
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 from copy import copy
-from prettytable import PrettyTable
 from typing import TYPE_CHECKING
 
-from mjlab.utils.lab_api import math as math_utils
 import mjlab.utils.lab_api.string as string_utils
 from mjlab.scene import Scene
 from mjlab.sensor import Sensor
+from mjlab.utils.lab_api import math as math_utils
+from prettytable import PrettyTable
+
 from instinct_mj.utils.timestamped_buffer import TimestampedBuffer
 
 from .motion_reference_data import MotionReferenceData, MotionReferenceState
@@ -21,10 +22,9 @@ if TYPE_CHECKING:
     from .motion_buffer import MotionBuffer
 
 import numpy as np
+import pytorch_kinematics as pk
 import torch
 import torch.distributed as dist
-
-import pytorch_kinematics as pk
 
 
 class MotionReferenceManager(Sensor):
@@ -639,8 +639,7 @@ class MotionReferenceManager(Sensor):
     def _resolve_entity(self, entity_name: str):
         if not self._entities:
             raise RuntimeError(
-                "Motion reference entity lookup requires entities from edit_spec(), "
-                "but no entities were provided."
+                "Motion reference entity lookup requires entities from edit_spec(), but no entities were provided."
             )
         if entity_name not in self._entities:
             raise RuntimeError(
@@ -773,7 +772,9 @@ class MotionReferenceManager(Sensor):
             )
             os.chdir(prev_cwd)
         else:
-            self._robot_kinematics_chain = pk.build_chain_from_urdf(model_content).to(dtype=torch.float, device=self.device)
+            self._robot_kinematics_chain = pk.build_chain_from_urdf(model_content).to(
+                dtype=torch.float, device=self.device
+            )
         # joint_pos_pk = joint_pos_sim[_joint_order_sim_to_pk]
         self._joint_order_sim_to_pk = torch.ones(self._num_joints, device=self.device, dtype=torch.long) * -1
         for joint_i, joint_name in enumerate(self._robot_kinematics_chain.get_joint_parameter_names()):
@@ -1109,7 +1110,7 @@ class MotionReferenceManager(Sensor):
             env_ids=self.ALL_INDICES,
         )
 
-    def debug_vis(self, visualizer: "DebugVisualizer") -> None:
+    def debug_vis(self, visualizer: DebugVisualizer) -> None:
         """Debug visualization (mjlab Sensor interface)."""
         if not self._is_initialized:
             return
@@ -1125,7 +1126,9 @@ class MotionReferenceManager(Sensor):
             if "root" in self.cfg.visualizing_marker_types:
                 root_marker_cfg = marker_cfgs["root_frame_ref"]
                 root_scale_cfg = root_marker_cfg.scale
-                root_scale = float(root_scale_cfg[0]) if isinstance(root_scale_cfg, (list, tuple)) else float(root_scale_cfg)
+                root_scale = (
+                    float(root_scale_cfg[0]) if isinstance(root_scale_cfg, (list, tuple)) else float(root_scale_cfg)
+                )
                 root_axis_radius = max(root_scale * 0.08, 1.0e-4)
                 root_color = root_marker_cfg.color
                 axis_colors = (
@@ -1160,7 +1163,9 @@ class MotionReferenceManager(Sensor):
             if "relative_links" in self.cfg.visualizing_marker_types:
                 rel_marker_cfg = marker_cfgs["relative_link_ref"]
                 rel_scale_cfg = rel_marker_cfg.scale
-                rel_scale = float(rel_scale_cfg[0]) if isinstance(rel_scale_cfg, (list, tuple)) else float(rel_scale_cfg)
+                rel_scale = (
+                    float(rel_scale_cfg[0]) if isinstance(rel_scale_cfg, (list, tuple)) else float(rel_scale_cfg)
+                )
                 rel_axis_radius = max(rel_scale * 0.08, 1.0e-4)
                 rel_color = rel_marker_cfg.color
                 rel_axis_colors = (

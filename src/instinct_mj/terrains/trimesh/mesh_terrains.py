@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import atexit
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import hashlib
-import numpy as np
 import os
-from scipy import ndimage
-import scipy.spatial.transform as tf
-import torch
-import trimesh
 import uuid
-import yaml
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING
 
 import coacd
+import numpy as np
+import scipy.spatial.transform as tf
+import torch
+import trimesh
+import yaml
+from scipy import ndimage
 
 # Cache CoACD decomposition results keyed by (abspath, params...) so the same
 # STL is only decomposed once even when the terrain generator creates many tiles.
@@ -29,8 +29,8 @@ _HFIELD_CACHE_VERSION = 4
 _HFIELD_RAYCAST_EXECUTORS: dict[int, ProcessPoolExecutor] = {}
 
 import mujoco
-
 from mjlab.terrains.terrain_generator import TerrainGeometry, TerrainOutput
+
 from instinct_mj.terrains.height_field.utils import convert_height_field_to_mesh
 
 from ..height_field.hf_terrains import generate_perlin_noise
@@ -162,10 +162,7 @@ def _load_coacd_parts_from_disk(cache_path: str) -> list[tuple[np.ndarray, np.nd
             verts_key = f"verts_{part_idx}"
             faces_key = f"faces_{part_idx}"
             if verts_key not in cache or faces_key not in cache:
-                raise ValueError(
-                    f"Invalid CoACD cache file (missing part arrays): {cache_path}, "
-                    f"part_idx={part_idx}"
-                )
+                raise ValueError(f"Invalid CoACD cache file (missing part arrays): {cache_path}, part_idx={part_idx}")
             parts_arrays.append(
                 (
                     np.asarray(cache[verts_key], dtype=np.float32),
@@ -216,7 +213,7 @@ def _compute_motion_matched_border_height(
         border_height = 0.0
         print(
             f"[TerrainImporter] Terrain {terrain_file} has no border verts at cfg.size edges; "
-            f"using border_height=0.0 (floor assumed at z≈0)."
+            "using border_height=0.0 (floor assumed at z≈0)."
         )
     else:
         border_height = float(np.mean(border_verts_z))
@@ -335,10 +332,7 @@ def _sanitize_coacd_parts(
             f"{terrain_tag}. Try increasing collision_coacd_threshold."
         )
     if skipped_parts > 0:
-        print(
-            f"[TerrainImporter] Skip {skipped_parts}/{total_parts} degenerate "
-            f"CoACD hull(s) for {terrain_tag}."
-        )
+        print(f"[TerrainImporter] Skip {skipped_parts}/{total_parts} degenerate CoACD hull(s) for {terrain_tag}.")
     return sanitized
 
 
@@ -412,10 +406,7 @@ def _run_coacd_decomposition(
     )
 
     # Store numpy arrays in cache (not raw CoACD objects)
-    parts_arrays = [
-        (np.asarray(v, dtype=np.float32), np.asarray(f, dtype=np.int32))
-        for v, f in raw_parts
-    ]
+    parts_arrays = [(np.asarray(v, dtype=np.float32), np.asarray(f, dtype=np.int32)) for v, f in raw_parts]
     parts_arrays = _sanitize_coacd_parts(parts_arrays, terrain_tag=terrain_tag)
     if verbose:
         print(f"[TerrainImporter] CoACD done: {terrain_tag}, hulls={len(parts_arrays)}.")
@@ -454,11 +445,10 @@ def _render_progress_bar(done: int, total: int, width: int = 24) -> str:
 def _print_prewarm_progress(done: int, total: int) -> None:
     """Print CoACD prewarm progress in-place."""
     progress_bar = _render_progress_bar(done, total)
-    percent = (100.0 * done / max(total, 1))
+    percent = 100.0 * done / max(total, 1)
     remaining = max(total - done, 0)
     print(
-        f"\r[TerrainImporter] CoACD prewarm {progress_bar} "
-        f"{done}/{total} ({percent:5.1f}%) remaining={remaining}",
+        f"\r[TerrainImporter] CoACD prewarm {progress_bar} {done}/{total} ({percent:5.1f}%) remaining={remaining}",
         end="",
         flush=True,
     )
@@ -645,7 +635,7 @@ def _add_collision_face_boxes(
         geometries.append(TerrainGeometry(geom=geom))
 
     print(
-        f"[TerrainImporter] Face-box collision: "
+        "[TerrainImporter] Face-box collision: "
         f"{len(geometries)} box geoms generated from {len(terrain_mesh.faces)} faces."
     )
     return geometries
@@ -794,15 +784,11 @@ def _add_collision_coacd(
         hull_geom_group = int(cfg.collision_coacd_collision_geom_group)
         hull_geom_rgba = tuple(float(v) for v in cfg.collision_coacd_collision_geom_rgba)
     if not 0 <= hull_geom_group <= 5:
-        raise ValueError(
-            "collision_coacd_collision_geom_group must be in [0, 5]. "
-            f"Got: {hull_geom_group}"
-        )
+        raise ValueError(f"collision_coacd_collision_geom_group must be in [0, 5]. Got: {hull_geom_group}")
     if hull_geom_rgba is not None:
         if len(hull_geom_rgba) != 4:
             raise ValueError(
-                "collision_coacd_collision_geom_rgba must have 4 elements "
-                f"(r, g, b, a). Got: {hull_geom_rgba}"
+                f"collision_coacd_collision_geom_rgba must have 4 elements (r, g, b, a). Got: {hull_geom_rgba}"
             )
 
     geometries: list[TerrainGeometry] = []
@@ -866,6 +852,7 @@ def _raycast_rows_worker(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Worker: ray-cast a subset of rows and return (ray_indices_local, hit_z)."""
     import trimesh as _trimesh
+
     vertices, faces, ray_origins_chunk, ray_directions_chunk, _mesh_z_min, _unused = job
     mesh = _trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
     ray_caster = _trimesh.ray.ray_triangle.RayMeshIntersector(mesh)
@@ -943,14 +930,16 @@ def _raycast_hfield_parallel(
     chunks = []
     for start in range(0, n_rays, chunk_size):
         end = min(start + chunk_size, n_rays)
-        chunks.append((
-            vertices,
-            faces,
-            ray_origins[start:end],
-            ray_directions[start:end],
-            0.0,  # unused
-            0.0,  # unused placeholder
-        ))
+        chunks.append(
+            (
+                vertices,
+                faces,
+                ray_origins[start:end],
+                ray_directions[start:end],
+                0.0,  # unused
+                0.0,  # unused placeholder
+            )
+        )
 
     if num_workers == 1:
         # Single-process path: avoid ProcessPoolExecutor overhead.
@@ -1040,11 +1029,13 @@ def _add_collision_hfield_from_mesh(
     ray_origin_z = mesh_z_max + 1.0
 
     n_rays = nrow * ncol
-    ray_origins = np.column_stack([
-        xx.reshape(-1),
-        yy.reshape(-1),
-        np.full(n_rays, ray_origin_z, dtype=np.float64),
-    ])
+    ray_origins = np.column_stack(
+        [
+            xx.reshape(-1),
+            yy.reshape(-1),
+            np.full(n_rays, ray_origin_z, dtype=np.float64),
+        ]
+    )
 
     # --- Cache lookup ---
     cache_key: tuple | None = None
@@ -1052,9 +1043,7 @@ def _add_collision_hfield_from_mesh(
     if terrain_abspath is not None:
         terrain_abspath = os.path.abspath(terrain_abspath)
         cache_key = _hfield_cache_key(terrain_abspath, resolution, (cfg.size[0], cfg.size[1]))
-        cache_path = _hfield_disk_cache_path(
-            terrain_abspath, cache_key, str(cfg.collision_hfield_cache_dirname)
-        )
+        cache_path = _hfield_disk_cache_path(terrain_abspath, cache_key, str(cfg.collision_hfield_cache_dirname))
 
     height: np.ndarray | None = None
 
@@ -1074,10 +1063,7 @@ def _add_collision_hfield_from_mesh(
     if height is None:
         raycast_backend = str(cfg.collision_hfield_raycast_backend)
         if raycast_backend not in ("cpu", "gpu"):
-            raise ValueError(
-                "collision_hfield_raycast_backend must be 'cpu' or 'gpu'. "
-                f"Got: {raycast_backend!r}"
-            )
+            raise ValueError(f"collision_hfield_raycast_backend must be 'cpu' or 'gpu'. Got: {raycast_backend!r}")
 
         if raycast_backend == "gpu":
             gpu_device = str(cfg.collision_hfield_gpu_device)
@@ -1140,12 +1126,14 @@ def _add_collision_hfield_from_mesh(
         stitch_border_pixels = max(1, min(stitch_border_pixels, max_border))
         stitch_height = cfg.collision_hfield_stitch_height
         if stitch_height is None:
-            edge_values = np.concatenate([
-                height[:stitch_border_pixels, :].reshape(-1),
-                height[-stitch_border_pixels:, :].reshape(-1),
-                height[:, :stitch_border_pixels].reshape(-1),
-                height[:, -stitch_border_pixels:].reshape(-1),
-            ])
+            edge_values = np.concatenate(
+                [
+                    height[:stitch_border_pixels, :].reshape(-1),
+                    height[-stitch_border_pixels:, :].reshape(-1),
+                    height[:, :stitch_border_pixels].reshape(-1),
+                    height[:, -stitch_border_pixels:].reshape(-1),
+                ]
+            )
             edge_values = edge_values[np.isfinite(edge_values)]
             if edge_values.size > 0:
                 stitch_height = float(np.mean(edge_values))
@@ -1250,11 +1238,13 @@ def _create_visual_hfield_from_mesh(
     ray_origin_z = mesh_z_max + 1.0
 
     n_rays = nrow * ncol
-    ray_origins = np.column_stack([
-        xx.reshape(-1),
-        yy.reshape(-1),
-        np.full(n_rays, ray_origin_z, dtype=np.float64),
-    ])
+    ray_origins = np.column_stack(
+        [
+            xx.reshape(-1),
+            yy.reshape(-1),
+            np.full(n_rays, ray_origin_z, dtype=np.float64),
+        ]
+    )
 
     # --- Cache lookup ---
     cache_key: tuple | None = None
@@ -1262,9 +1252,7 @@ def _create_visual_hfield_from_mesh(
     if terrain_abspath is not None:
         terrain_abspath = os.path.abspath(terrain_abspath)
         cache_key = _hfield_cache_key(terrain_abspath, resolution, (cfg.size[0], cfg.size[1]))
-        cache_path = _hfield_disk_cache_path(
-            terrain_abspath, cache_key, str(cfg.hfield_cache_dirname)
-        )
+        cache_path = _hfield_disk_cache_path(terrain_abspath, cache_key, str(cfg.hfield_cache_dirname))
 
     height: np.ndarray | None = None
 
@@ -1273,7 +1261,13 @@ def _create_visual_hfield_from_mesh(
         height = _HFIELD_HEIGHT_CACHE.get(cache_key)
 
     # 2. Disk cache hit.
-    if height is None and cache_key is not None and cfg.hfield_use_disk_cache and cache_path and os.path.exists(cache_path):
+    if (
+        height is None
+        and cache_key is not None
+        and cfg.hfield_use_disk_cache
+        and cache_path
+        and os.path.exists(cache_path)
+    ):
         with np.load(cache_path, allow_pickle=False) as npz:
             loaded = np.asarray(npz["height"], dtype=np.float64)
             if loaded.shape == (nrow, ncol):
@@ -1551,8 +1545,7 @@ def motion_matched_terrain(
     origin = np.array([cfg.size[0] / 2, cfg.size[1] / 2, -border_height])
 
     skip_source_mesh_import = bool(cfg.collision_coacd) and (
-        bool(cfg.collision_coacd_hide_source_visual_mesh)
-        or bool(cfg.collision_coacd_visualize_collision_hulls)
+        bool(cfg.collision_coacd_hide_source_visual_mesh) or bool(cfg.collision_coacd_visualize_collision_hulls)
     )
     geometries: list[TerrainGeometry] = []
     geom = None
@@ -1571,15 +1564,16 @@ def motion_matched_terrain(
             pos=(0.0, 0.0, 0.0),
         )
         geometries.append(TerrainGeometry(geom=geom))
-    enabled_modes = sum([
-        bool(cfg.face_box_collision),
-        bool(cfg.collision_hfield),
-        bool(cfg.collision_coacd),
-    ])
+    enabled_modes = sum(
+        [
+            bool(cfg.face_box_collision),
+            bool(cfg.collision_hfield),
+            bool(cfg.collision_coacd),
+        ]
+    )
     if enabled_modes > 1:
         raise ValueError(
-            "face_box_collision, collision_hfield, and collision_coacd are mutually exclusive. "
-            "Enable only one of them."
+            "face_box_collision, collision_hfield, and collision_coacd are mutually exclusive. Enable only one of them."
         )
     if cfg.collision_coacd:
         # Keep mesh for rendering/depth sensing but route physics contacts to CoACD convex hulls.
@@ -1597,15 +1591,12 @@ def motion_matched_terrain(
                 source_geom_group = int(cfg.collision_coacd_source_visual_geom_group)
                 if not 0 <= source_geom_group <= 5:
                     raise ValueError(
-                        "collision_coacd_source_visual_geom_group must be in [0, 5]. "
-                        f"Got: {source_geom_group}"
+                        f"collision_coacd_source_visual_geom_group must be in [0, 5]. Got: {source_geom_group}"
                     )
                 geom.group = source_geom_group
                 if bool(cfg.collision_coacd_hide_source_visual_mesh):
                     geom.rgba[:] = (0.0, 0.0, 0.0, 0.0)
-        geometries.extend(
-            _add_collision_coacd(cfg, spec, terrain_mesh, terrain_idx, terrain_abspath)
-        )
+        geometries.extend(_add_collision_coacd(cfg, spec, terrain_mesh, terrain_idx, terrain_abspath))
     elif cfg.face_box_collision:
         # Keep mesh for rendering/depth sensing but route physics contacts to per-face boxes.
         # Root cause: MuJoCo's polyhedral mesh collision treats the interior of any closed
@@ -1614,24 +1605,18 @@ def motion_matched_terrain(
         geom.contype = 0
         geom.conaffinity = 0
         geom.group = 2
-        geometries.extend(
-            _add_collision_face_boxes(cfg, spec, terrain_mesh)
-        )
+        geometries.extend(_add_collision_face_boxes(cfg, spec, terrain_mesh))
     elif cfg.collision_hfield:
         # Keep mesh for rendering/depth sensing but route physics contacts to hfield.
         geom.contype = 0
         geom.conaffinity = 0
         geom.group = 2
-        geometries.append(
-            _add_collision_hfield_from_mesh(cfg, spec, terrain_mesh, terrain_idx, terrain_abspath)
-        )
+        geometries.append(_add_collision_hfield_from_mesh(cfg, spec, terrain_mesh, terrain_idx, terrain_abspath))
     return TerrainOutput(origin=origin, geometries=geometries)
 
 
 @generate_wall
-def floating_box_terrain(
-    difficulty: float, cfg: object
-) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def floating_box_terrain(difficulty: float, cfg: object) -> tuple[list[trimesh.Trimesh], np.ndarray]:
     """Generates a floating box terrain."""
 
     # resolve the terrain configuration
@@ -1725,9 +1710,7 @@ def floating_box_terrain(
 
 
 @generate_wall
-def random_multi_box_terrain(
-    difficulty: float, cfg: object
-) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def random_multi_box_terrain(difficulty: float, cfg: object) -> tuple[list[trimesh.Trimesh], np.ndarray]:
     """Generates a terrain containing multiple boxes with random size and orientation."""
 
     box_height_range = cfg.box_height_range

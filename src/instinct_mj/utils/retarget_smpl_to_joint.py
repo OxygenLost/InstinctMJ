@@ -4,7 +4,6 @@ Each of them retargets smpl poses to robot's base pose and joint positions
 
 import numpy as np
 import torch
-
 from mjlab.utils.lab_api import math as math_utils
 
 import instinct_mj.utils.math as instinct_math

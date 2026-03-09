@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Literal
 
 import cv2
-
-from mjlab.utils.lab_api import math as math_utils
+import torch
 from mjlab.managers import ManagerTermBase, ManagerTermBaseCfg, SceneEntityCfg
+from mjlab.utils.lab_api import math as math_utils
+
 from instinct_mj.envs.mdp.events.randomization import _randomize_prop_by_op
 
 if TYPE_CHECKING:

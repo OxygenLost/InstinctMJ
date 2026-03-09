@@ -6,7 +6,7 @@ from instinct_mj.rl import InstinctRlNormalizerCfg
 
 
 def default_policy_critic_normalizers() -> dict[str, InstinctRlNormalizerCfg]:
-  return {
-    "policy": InstinctRlNormalizerCfg(),
-    "critic": InstinctRlNormalizerCfg(),
-  }
+    return {
+        "policy": InstinctRlNormalizerCfg(),
+        "critic": InstinctRlNormalizerCfg(),
+    }

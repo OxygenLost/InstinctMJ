@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-
 import warp as wp
 
 # disable warp module initialization messages

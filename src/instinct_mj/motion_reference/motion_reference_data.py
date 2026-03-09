@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
+
+import torch
 
 import instinct_mj.utils.torch as torch_utils
 

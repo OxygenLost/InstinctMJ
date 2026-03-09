@@ -11,12 +11,10 @@ import multiprocessing as mp
 import os
 
 import numpy as np
+import pytorch_kinematics as pk
 import torch
 import tqdm
 import yaml
-
-import pytorch_kinematics as pk
-
 from mjlab.utils.lab_api import math as math_utils
 
 from instinct_mj.assets.unitree_g1 import G1_MJCF_PATH
@@ -421,7 +419,7 @@ def save_filtered_files(files_validity, args):
     print(f"AMASS filtered done, {len(selected_files)} files stored in {args.output}")
 
 
-def _build_parser() -> "argparse.ArgumentParser":
+def _build_parser() -> argparse.ArgumentParser:
     import argparse
 
     parser = argparse.ArgumentParser(description="AMASS filtering script")

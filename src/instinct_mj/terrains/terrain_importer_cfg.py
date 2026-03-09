@@ -1,6 +1,6 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
 
+from dataclasses import dataclass, field
 from typing import Literal
 
 from mjlab.terrains import TerrainImporterCfg as TerrainImporterCfgBase

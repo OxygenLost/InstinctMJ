@@ -8,4 +8,3 @@ from instinct_mj.scripts.instinct_rl.plotter import Plotter
 __all__ = [
     "Plotter",
 ]
-

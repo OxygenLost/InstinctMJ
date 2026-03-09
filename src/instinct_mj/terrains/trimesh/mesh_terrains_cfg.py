@@ -1,17 +1,21 @@
 from dataclasses import MISSING, dataclass, field
 from typing import List
+
 import mujoco
 import numpy as np
-
 from mjlab.terrains import SubTerrainCfg as SubTerrainBaseCfg
 
 from . import mesh_terrains
 
+
 @dataclass
 class WallTerrainCfgMixin:
-    wall_prob: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0])  # Probability of generating walls on [left, right, front, back] sides
+    wall_prob: List[float] = field(
+        default_factory=lambda: [0.0, 0.0, 0.0, 0.0]
+    )  # Probability of generating walls on [left, right, front, back] sides
     wall_height: float = 5.0  # Height of the walls
     wall_thickness: float = 0.05  # Thickness of the walls
+
 
 @dataclass(kw_only=True)
 class STLHeightfieldTerrainCfg(SubTerrainBaseCfg):

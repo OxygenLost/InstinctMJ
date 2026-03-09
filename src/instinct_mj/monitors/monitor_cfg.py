@@ -5,6 +5,7 @@ from mjlab.managers import ManagerTermBaseCfg
 from .monitor_manager import MonitorTerm
 from .monitors import TorqueMonitorSensor
 
+
 @dataclass(kw_only=True)
 class MonitorSensorCfg:
     class_type: type = None
@@ -13,9 +14,11 @@ class MonitorSensorCfg:
 
     entity_name: str = "robot"  # entity name to monitor
 
+
 @dataclass(kw_only=True)
 class MonitorTermCfg(ManagerTermBaseCfg):
     func: type[MonitorTerm] = MISSING
+
 
 @dataclass(kw_only=True)
 class TorqueMonitorSensorCfg(MonitorSensorCfg):

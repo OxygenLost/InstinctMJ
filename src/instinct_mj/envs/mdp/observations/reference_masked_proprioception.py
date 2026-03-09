@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import torch
-from prettytable import PrettyTable
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.envs.mdp import joint_pos_rel
 from mjlab.managers import ManagerTermBase, ObservationTermCfg, SceneEntityCfg
 from mjlab.utils.lab_api import math as math_utils
+from prettytable import PrettyTable
 
 import instinct_mj.utils.math as instinct_math
 
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from mjlab.envs import ManagerBasedRlEnv as ManagerBasedEnv
 
     from instinct_mj.motion_reference import MotionReferenceManager
+
 
 def joint_pos(
     env: ManagerBasedEnv,

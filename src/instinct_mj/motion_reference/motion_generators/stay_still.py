@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import inspect
 import os
-import yaml
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import yaml
 from mjlab.utils.lab_api import math as math_utils
 
 from instinct_mj.motion_reference import MotionReferenceData, MotionReferenceState

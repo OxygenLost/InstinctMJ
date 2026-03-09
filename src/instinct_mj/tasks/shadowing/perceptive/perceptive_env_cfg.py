@@ -1,10 +1,9 @@
-from dataclasses import field, dataclass, MISSING
 import math
+from dataclasses import MISSING, dataclass, field
 
-import mujoco
 import mjlab.envs.mdp as mdp
 import mjlab.sim as sim_utils
-from mjlab.entity import EntityCfg
+import mujoco
 from mjlab.managers import CurriculumTermCfg, EventTermCfg
 from mjlab.managers import ObservationGroupCfg as ObsGroupCfg
 from mjlab.managers import ObservationTermCfg as ObsTermCfg
@@ -22,8 +21,8 @@ from mjlab.sensor import (
     SensorCfg,
 )
 from mjlab.terrains import FlatPatchSamplingCfg
-from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 from mjlab.utils.noise import UniformNoiseCfg
+from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 
 import instinct_mj.envs.mdp as instinct_mdp
 from instinct_mj.envs.manager_based_rl_env_cfg import InstinctLabRLEnvCfg
@@ -55,15 +54,6 @@ from instinct_mj.utils.noise import (
 )
 
 # PROPRIO_HISTORY_LENGTH = 0
-PROPRIO_HISTORY_LENGTH = 8
-_UNDESIRED_CONTACT_BODY_REGEX = (
-    r"^(?!left_ankle_roll_link$)(?!right_ankle_roll_link$)(?!left_wrist_yaw_link$)(?!right_wrist_yaw_link$).+$"
-)
-
-def get_motion_matched_subterrain_cfg(sub_terrains: dict[str, object]) -> MotionMatchedTerrainCfg:
-    """Return the required motion-matched subterrain config."""
-    terrain_cfg = sub_terrains["motion_matched"]
-    return terrain_cfg  # type: ignore[return-value]
 
 
 def _edit_perceptive_scene_spec(spec: mujoco.MjSpec) -> None:
@@ -161,9 +151,7 @@ def _edit_perceptive_scene_spec(spec: mujoco.MjSpec) -> None:
             collision_enabled = (original_contype != 0) or (original_conaffinity != 0)
             geom_name = (geom.name or "").lower()
             collision_name_hint = ("collision" in geom_name) or ("_col" in geom_name)
-            hide_collision_geom = collision_enabled and (
-                geom.type != mujoco.mjtGeom.mjGEOM_MESH or collision_name_hint
-            )
+            hide_collision_geom = collision_enabled and (geom.type != mujoco.mjtGeom.mjGEOM_MESH or collision_name_hint)
             geom.contype = 0
             geom.conaffinity = 0
             if hide_collision_geom:
@@ -183,46 +171,113 @@ class PerceptiveShadowingSceneCfg(InteractiveSceneCfg):
     env_spacing: float = 4.0
 
     # terrain
-    terrain: object = field(default_factory=lambda: TerrainImporterCfg(
-        terrain_type="hacked_generator",
-        terrain_generator=FiledTerrainGeneratorCfg(
-            size=(9, 12),
-            border_width=0.0,
-            border_height=0.0,
-            num_rows=7,
-            num_cols=7,
-            add_lights=True,
-            sub_terrains={
-                # MotionMatchedTerrainCfg keeps motion-terrain pairing from metadata.yaml.
-                # Use CoACD collision to avoid MuJoCo mesh convex-hull filling issues.
-                "motion_matched": MotionMatchedTerrainCfg(
-                    proportion=1.0,
-                    path="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
-                    metadata_yaml="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
-                    collision_coacd=True,
-                    # Use CoACD hulls directly as rendered terrain mesh (instead of source STL mesh).
-                    collision_coacd_visualize_collision_hulls=True,
-                    collision_coacd_threshold=0.04,
-                    # Keep hull geometry detailed to avoid blocky/disconnected visual artifacts.
-                    collision_coacd_decimate=False,
-                    collision_coacd_max_ch_vertex=256,
-                    collision_coacd_resolution=3000,
-                    # Keep stable runtime/caching behavior.
-                    collision_coacd_log_level="off",
-                    collision_coacd_use_disk_cache=True,
-                    collision_coacd_prewarm_all=True,
-                    collision_coacd_prewarm_workers=0,
-                    collision_coacd_geom_margin=0.0,
-                    collision_coacd_z_offset=0.0,
-                    collision_coacd_auto_align_top_surface=True,
-                ),
-            },
-        ),
-    ))
+    terrain: object = field(
+        default_factory=lambda: TerrainImporterCfg(
+            terrain_type="hacked_generator",
+            terrain_generator=FiledTerrainGeneratorCfg(
+                size=(9, 12),
+                border_width=0.0,
+                border_height=0.0,
+                num_rows=7,
+                num_cols=7,
+                add_lights=True,
+                sub_terrains={
+                    # MotionMatchedTerrainCfg keeps motion-terrain pairing from metadata.yaml.
+                    # Use CoACD collision to avoid MuJoCo mesh convex-hull filling issues.
+                    "motion_matched": MotionMatchedTerrainCfg(
+                        proportion=1.0,
+                        path="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
+                        metadata_yaml="PLACEHOLDER",  # Will be overridden in concrete env cfg __post_init__
+                        collision_coacd=True,
+                        # Use CoACD hulls directly as rendered terrain mesh (instead of source STL mesh).
+                        collision_coacd_visualize_collision_hulls=True,
+                        collision_coacd_threshold=0.04,
+                        # Keep hull geometry detailed to avoid blocky/disconnected visual artifacts.
+                        collision_coacd_decimate=False,
+                        collision_coacd_max_ch_vertex=256,
+                        collision_coacd_resolution=3000,
+                        # Keep stable runtime/caching behavior.
+                        collision_coacd_log_level="off",
+                        collision_coacd_use_disk_cache=True,
+                        collision_coacd_prewarm_all=True,
+                        collision_coacd_prewarm_workers=0,
+                        collision_coacd_geom_margin=0.0,
+                        collision_coacd_z_offset=0.0,
+                        collision_coacd_auto_align_top_surface=True,
+                    ),
+                },
+            ),
+        )
+    )
 
     # sensors
-    sensors: tuple[SensorCfg, ...] = field(default_factory=lambda: _make_perceptive_base_scene_sensors())
-
+    sensors: tuple[SensorCfg, ...] = field(
+        default_factory=lambda: (
+            ContactSensorCfg(
+                name="contact_forces",
+                primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="maxforce",
+                history_length=3,
+                track_air_time=True,
+            ),
+            RayCastSensorCfg(
+                name="height_scanner",
+                frame=ObjRef(type="body", name="torso_link", entity="robot"),
+                pattern=GridPatternCfg(resolution=0.1, size=(1.6, 1.0)),
+                ray_alignment="yaw",
+                max_distance=30.0,
+                debug_vis=False,
+            ),
+            NoisyGroupedRayCasterCameraCfg(
+                name="camera",
+                frame=ObjRef(type="body", name="torso_link", entity="robot"),
+                pattern=PinholeCameraPatternCfg(
+                    height=int(270 / 10),
+                    width=int(480 / 10),
+                    fovy=58.0,
+                ),
+                focal_length=1.0,
+                horizontal_aperture=2 * math.tan(math.radians(87) / 2),
+                vertical_aperture=2 * math.tan(math.radians(58) / 2),
+                ray_alignment="base",
+                include_geom_groups=(0, 2),
+                exclude_parent_body=False,
+                offset=NoisyGroupedRayCasterCameraCfg.OffsetCfg(
+                    pos=(
+                        0.04764571478 + 0.0039635 - 0.0042 * math.cos(math.radians(48)),
+                        0.015,
+                        0.46268178553 - 0.044 + 0.0042 * math.sin(math.radians(48)) + 0.016,
+                    ),
+                    rot=(
+                        math.cos(math.radians(0.5) / 2) * math.cos(math.radians(48) / 2),
+                        math.sin(math.radians(0.5) / 2),
+                        math.sin(math.radians(48) / 2),
+                        0.0,
+                    ),
+                    convention="world",
+                ),
+                data_types=["distance_to_image_plane"],
+                mesh_filter_max_hops=24,
+                noise_pipeline={
+                    "normalize": DepthNormalizationCfg(
+                        depth_range=(0.0, 2.0),
+                        normalize=True,
+                    ),
+                    "crop_and_resize": CropAndResizeCfg(
+                        crop_region=(2, 2, 2, 2),
+                        resize_shape=(18, 32),
+                    ),
+                },
+                update_period=1 / 60,
+                debug_vis=False,
+                depth_clipping_behavior="max",
+                min_distance=0.05,
+                max_distance=1e6,
+            ),
+        )
+    )
 
     def __post_init__(self):
         self.spec_fn = _edit_perceptive_scene_spec
@@ -230,131 +285,9 @@ class PerceptiveShadowingSceneCfg(InteractiveSceneCfg):
             raise ValueError("PerceptiveShadowingSceneCfg requires entity 'robot'.")
         if not any(sensor_cfg.name == "motion_reference" for sensor_cfg in self.sensors):
             raise ValueError("PerceptiveShadowingSceneCfg requires sensor 'motion_reference'.")
-        motion_reference_cfg = get_motion_reference_cfg(self)
+        motion_reference_cfg = next(sensor_cfg for sensor_cfg in self.sensors if sensor_cfg.name == "motion_reference")
         if (not motion_reference_cfg.debug_vis) and ("robot_reference" in self.entities):
             del self.entities["robot_reference"]
-
-
-def make_perceptive_scene_entities(
-    *,
-    robot: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build perceptive scene entities without bridge fields."""
-    # robots
-    # robot reference articulation
-    # motion reference is configured as a sensor cfg ("motion_reference").
-    return {"robot": robot}
-
-
-def make_perceptive_scene_entities_with_reference(
-    *,
-    robot: EntityCfg,
-    robot_reference: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build perceptive scene entities for play/debug with reference robot."""
-    return {
-        "robot": robot,
-        "robot_reference": robot_reference,
-    }
-
-
-def _make_perceptive_height_scanner_sensor_cfg() -> RayCastSensorCfg:
-    return RayCastSensorCfg(
-        name="height_scanner",
-        frame=ObjRef(type="body", name="torso_link", entity="robot"),
-        pattern=GridPatternCfg(resolution=0.1, size=(1.6, 1.0)),
-        ray_alignment="yaw",
-        max_distance=30.0,
-        debug_vis=False,
-    )
-
-
-def _make_perceptive_camera_sensor_cfg() -> NoisyGroupedRayCasterCameraCfg:
-    return NoisyGroupedRayCasterCameraCfg(
-        name="camera",
-        frame=ObjRef(type="body", name="torso_link", entity="robot"),
-        pattern=PinholeCameraPatternCfg(
-            height=int(270 / 10),
-            width=int(480 / 10),
-            fovy=58.0,
-        ),
-        focal_length=1.0,
-        horizontal_aperture=2 * math.tan(math.radians(87) / 2),  # fovx
-        vertical_aperture=2 * math.tan(math.radians(58) / 2),  # fovy
-        ray_alignment="base",
-        include_geom_groups=(0, 2),
-        exclude_parent_body=False,
-        offset=NoisyGroupedRayCasterCameraCfg.OffsetCfg(
-            pos=(
-                0.04764571478 + 0.0039635 - 0.0042 * math.cos(math.radians(48)),
-                0.015,
-                0.46268178553 - 0.044 + 0.0042 * math.sin(math.radians(48)) + 0.016,
-            ),
-            rot=(
-                math.cos(math.radians(0.5) / 2) * math.cos(math.radians(48) / 2),
-                math.sin(math.radians(0.5) / 2),
-                math.sin(math.radians(48) / 2),
-                0.0,
-            ),
-            convention="world",
-        ),
-        data_types=["distance_to_image_plane"],
-        mesh_filter_max_hops=24,
-        noise_pipeline={
-            # "depth_contour_noise": DepthContourNoiseCfg(
-            #     contour_threshold=1.8,  # in [m]
-            #     maxpool_kernel_size=1,
-            # ),
-            # "depth_artifact_noise": DepthArtifactNoiseCfg(),
-            # "reflection_artifact_noise": DepthArtifactNoiseCfg(noise_value=30.0),
-            # "stereo_noise": RangeBasedGaussianNoiseCfg(
-            #     max_value=1.2,
-            #     min_value=0.12,
-            #     noise_std=0.02,
-            # ),
-            # "sky_artifact_noise": DepthSkyArtifactNoiseCfg(),
-            # "gaussian_blur_noise": GaussianBlurNoiseCfg(
-            #     kernel_size=3,
-            #     sigma=0.5,
-            # ),
-            # "stereo_too_close_noise": StereoTooCloseNoiseCfg(),
-            # These last two noise model will affect the processing on the onboard device.
-            "normalize": DepthNormalizationCfg(
-                depth_range=(0.0, 2.0),
-                normalize=True,
-            ),
-            "crop_and_resize": CropAndResizeCfg(
-                crop_region=(2, 2, 2, 2),
-                resize_shape=(18, 32),
-            ),
-        },
-        # data_histories={"distance_to_image_plane": 5},
-        update_period=1 / 60,
-        debug_vis=False,
-        depth_clipping_behavior="max",  # clip to the maximum value
-        min_distance=0.05,
-        max_distance=1e6,
-    )
-
-
-def _make_perceptive_contact_forces_sensor_cfg() -> ContactSensorCfg:
-    return ContactSensorCfg(
-        name="contact_forces",
-        primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="maxforce",
-        history_length=3,
-        track_air_time=True,
-    )
-
-
-def _make_perceptive_base_scene_sensors(*, include_height_scanner: bool = True) -> tuple[SensorCfg, ...]:
-    sensor_list: list[SensorCfg] = [_make_perceptive_contact_forces_sensor_cfg()]
-    if include_height_scanner:
-        sensor_list.append(_make_perceptive_height_scanner_sensor_cfg())
-    sensor_list.append(_make_perceptive_camera_sensor_cfg())
-    return tuple(sensor_list)
 
 
 def make_perceptive_scene_sensors(
@@ -364,42 +297,97 @@ def make_perceptive_scene_sensors(
 ) -> tuple[SensorCfg, ...]:
     """Build perceptive scene sensors without bridge fields."""
     # lights are applied in _edit_perceptive_scene_spec.
-    return _make_perceptive_base_scene_sensors(include_height_scanner=include_height_scanner) + (motion_reference,)
-
-
-def get_scene_entity_cfg(scene: InteractiveSceneCfg, entity_name: str) -> EntityCfg:
-    """Get scene entity config by name."""
-    return scene.entities[entity_name]
-
-
-def get_scene_sensor_cfg(scene: InteractiveSceneCfg, sensor_name: str) -> SensorCfg:
-    """Get scene sensor config by name."""
-    return next(
-        sensor_cfg
-        for sensor_cfg in scene.sensors
-        if sensor_cfg.name == sensor_name
+    sensor_list: list[SensorCfg] = [
+        ContactSensorCfg(
+            name="contact_forces",
+            primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
+            secondary=ContactMatch(mode="body", pattern="terrain"),
+            fields=("found", "force"),
+            reduce="maxforce",
+            history_length=3,
+            track_air_time=True,
+        )
+    ]
+    if include_height_scanner:
+        sensor_list.append(
+            RayCastSensorCfg(
+                name="height_scanner",
+                frame=ObjRef(type="body", name="torso_link", entity="robot"),
+                pattern=GridPatternCfg(resolution=0.1, size=(1.6, 1.0)),
+                ray_alignment="yaw",
+                max_distance=30.0,
+                debug_vis=False,
+            )
+        )
+    sensor_list.append(
+        NoisyGroupedRayCasterCameraCfg(
+            name="camera",
+            frame=ObjRef(type="body", name="torso_link", entity="robot"),
+            pattern=PinholeCameraPatternCfg(
+                height=int(270 / 10),
+                width=int(480 / 10),
+                fovy=58.0,
+            ),
+            focal_length=1.0,
+            horizontal_aperture=2 * math.tan(math.radians(87) / 2),  # fovx
+            vertical_aperture=2 * math.tan(math.radians(58) / 2),  # fovy
+            ray_alignment="base",
+            include_geom_groups=(0, 2),
+            exclude_parent_body=False,
+            offset=NoisyGroupedRayCasterCameraCfg.OffsetCfg(
+                pos=(
+                    0.04764571478 + 0.0039635 - 0.0042 * math.cos(math.radians(48)),
+                    0.015,
+                    0.46268178553 - 0.044 + 0.0042 * math.sin(math.radians(48)) + 0.016,
+                ),
+                rot=(
+                    math.cos(math.radians(0.5) / 2) * math.cos(math.radians(48) / 2),
+                    math.sin(math.radians(0.5) / 2),
+                    math.sin(math.radians(48) / 2),
+                    0.0,
+                ),
+                convention="world",
+            ),
+            data_types=["distance_to_image_plane"],
+            mesh_filter_max_hops=24,
+            noise_pipeline={
+                # "depth_contour_noise": DepthContourNoiseCfg(
+                #     contour_threshold=1.8,  # in [m]
+                #     maxpool_kernel_size=1,
+                # ),
+                # "depth_artifact_noise": DepthArtifactNoiseCfg(),
+                # "reflection_artifact_noise": DepthArtifactNoiseCfg(noise_value=30.0),
+                # "stereo_noise": RangeBasedGaussianNoiseCfg(
+                #     max_value=1.2,
+                #     min_value=0.12,
+                #     noise_std=0.02,
+                # ),
+                # "sky_artifact_noise": DepthSkyArtifactNoiseCfg(),
+                # "gaussian_blur_noise": GaussianBlurNoiseCfg(
+                #     kernel_size=3,
+                #     sigma=0.5,
+                # ),
+                # "stereo_too_close_noise": StereoTooCloseNoiseCfg(),
+                # These last two noise model will affect the processing on the onboard device.
+                "normalize": DepthNormalizationCfg(
+                    depth_range=(0.0, 2.0),
+                    normalize=True,
+                ),
+                "crop_and_resize": CropAndResizeCfg(
+                    crop_region=(2, 2, 2, 2),
+                    resize_shape=(18, 32),
+                ),
+            },
+            # data_histories={"distance_to_image_plane": 5},
+            update_period=1 / 60,
+            debug_vis=False,
+            depth_clipping_behavior="max",  # clip to the maximum value
+            min_distance=0.05,
+            max_distance=1e6,
+        )
     )
-
-
-def remove_scene_sensor_cfg(scene: InteractiveSceneCfg, sensor_name: str) -> None:
-    """Remove a sensor cfg from scene.sensors by name."""
-    scene.sensors = tuple(
-        sensor_cfg
-        for sensor_cfg in scene.sensors
-        if sensor_cfg.name != sensor_name
-    )
-
-
-def get_motion_reference_cfg(scene: InteractiveSceneCfg) -> MotionReferenceManagerCfg:
-    """Get motion reference sensor cfg from scene."""
-    sensor_cfg = get_scene_sensor_cfg(scene, "motion_reference")
-    return sensor_cfg  # type: ignore[return-value]
-
-
-def get_camera_sensor_cfg(scene: InteractiveSceneCfg) -> NoisyGroupedRayCasterCameraCfg:
-    """Get camera sensor cfg from scene."""
-    sensor_cfg = get_scene_sensor_cfg(scene, "camera")
-    return sensor_cfg  # type: ignore[return-value]
+    sensor_list.append(motion_reference)
+    return tuple(sensor_list)
 
 
 def make_perceptive_commands() -> dict[str, instinct_mdp.ShadowingCommandBaseCfg]:
@@ -436,7 +424,6 @@ def make_perceptive_commands() -> dict[str, instinct_mdp.ShadowingCommandBaseCfg
     }
 
 
-
 def make_actions() -> dict[str, mdp.JointPositionActionCfg]:
     """Action specifications for the MDP."""
     return {
@@ -446,7 +433,6 @@ def make_actions() -> dict[str, mdp.JointPositionActionCfg]:
             scale=0.5,
         ),
     }
-
 
 
 def make_observations() -> dict[str, ObsGroupCfg]:
@@ -467,7 +453,6 @@ def make_observations() -> dict[str, ObsGroupCfg]:
             params={"command_name": "rotation_ref_command"},
             noise=UniformNoiseCfg(n_min=-0.05, n_max=0.05),
         ),
-
         # height_scan = ObsTermCfg(
         #     func=mdp.height_scan,
         #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -478,18 +463,17 @@ def make_observations() -> dict[str, ObsGroupCfg]:
             # params={"sensor_cfg": SceneEntityCfg("camera"), "data_type": "distance_to_image_plane"},
             params={"sensor_cfg": SceneEntityCfg("camera"), "data_type": "distance_to_image_plane_noised"},
         ),
-
         # proprioception
         "projected_gravity": ObsTermCfg(
             func=mdp.projected_gravity,
             noise=UniformNoiseCfg(n_min=-0.05, n_max=0.05),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         # base_lin_vel = ObsTermCfg(func=mdp.base_lin_vel)
         "base_ang_vel": ObsTermCfg(
             func=mdp.base_ang_vel,
             noise=UniformNoiseCfg(n_min=-0.2, n_max=0.2),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_pos": ObsTermCfg(
             func=mdp.joint_pos_rel,
@@ -497,7 +481,7 @@ def make_observations() -> dict[str, ObsGroupCfg]:
                 "asset_cfg": SceneEntityCfg("robot"),
             },
             noise=UniformNoiseCfg(n_min=-0.01, n_max=0.01),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_vel": ObsTermCfg(
             func=mdp.joint_vel_rel,
@@ -505,11 +489,11 @@ def make_observations() -> dict[str, ObsGroupCfg]:
                 "asset_cfg": SceneEntityCfg("robot"),
             },
             noise=UniformNoiseCfg(n_min=-0.5, n_max=0.5),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "last_action": ObsTermCfg(
             func=mdp.last_action,
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
     }
 
@@ -519,7 +503,6 @@ def make_observations() -> dict[str, ObsGroupCfg]:
         "joint_pos_ref": ObsTermCfg(func=mdp.generated_commands, params={"command_name": "joint_pos_ref_command"}),
         "joint_vel_ref": ObsTermCfg(func=mdp.generated_commands, params={"command_name": "joint_vel_ref_command"}),
         "position_ref": ObsTermCfg(func=mdp.generated_commands, params={"command_name": "position_ref_command"}),
-
         # proprioception
         "link_pos": ObsTermCfg(
             func=instinct_mdp.link_pos_b,
@@ -529,38 +512,36 @@ def make_observations() -> dict[str, ObsGroupCfg]:
             func=instinct_mdp.link_tannorm_b,
             params={"asset_cfg": SceneEntityCfg(name="robot", body_names=MISSING, preserve_order=True)},
         ),
-
         "height_scan": ObsTermCfg(
             func=mdp.height_scan,
             params={"sensor_name": "height_scanner"},
             clip=[-20.0, 20.0],
         ),
-
         "base_lin_vel": ObsTermCfg(
             func=mdp.base_lin_vel,
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "base_ang_vel": ObsTermCfg(
             func=mdp.base_ang_vel,
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_pos": ObsTermCfg(
             func=mdp.joint_pos_rel,
             params={
                 "asset_cfg": SceneEntityCfg("robot"),
             },
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_vel": ObsTermCfg(
             func=mdp.joint_vel_rel,
             params={
                 "asset_cfg": SceneEntityCfg("robot"),
             },
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "last_action": ObsTermCfg(
             func=mdp.last_action,
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
     }
 
@@ -578,7 +559,6 @@ def make_observations() -> dict[str, ObsGroupCfg]:
     }
 
 
-
 def make_rewards() -> dict[str, RewTermCfg]:
     """Reward specifications for the perceptive shadowing MDP."""
     return {
@@ -589,7 +569,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "std": 0.3,
             },
         ),
-
         "base_rot_imitation_gauss": RewTermCfg(
             func=instinct_mdp.base_rot_imitation_gauss,
             weight=0.5,
@@ -598,7 +577,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "difference_type": "axis_angle",
             },
         ),
-
         "link_pos_imitation_gauss": RewTermCfg(
             func=instinct_mdp.link_pos_imitation_gauss,
             weight=1.0,
@@ -609,7 +587,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "std": 0.3,
             },
         ),
-
         "link_rot_imitation_gauss": RewTermCfg(
             func=instinct_mdp.link_rot_imitation_gauss,
             weight=1.0,
@@ -620,7 +597,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "std": 0.4,
             },
         ),
-
         "link_lin_vel_imitation_gauss": RewTermCfg(
             func=instinct_mdp.link_lin_vel_imitation_gauss,
             weight=1.0,
@@ -629,7 +605,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "std": 1.0,
             },
         ),
-
         "link_ang_vel_imitation_gauss": RewTermCfg(
             func=instinct_mdp.link_ang_vel_imitation_gauss,
             weight=1.0,
@@ -638,25 +613,26 @@ def make_rewards() -> dict[str, RewTermCfg]:
                 "std": 3.14,
             },
         ),
-
         "action_rate_l2": RewTermCfg(func=mdp.action_rate_l2, weight=-0.1),
-
         "joint_limit": RewTermCfg(
             func=mdp.joint_pos_limits,
             weight=-10.0,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"])},
         ),
-
         "undesired_contacts": RewTermCfg(
             func=instinct_mdp.undesired_contacts,
             weight=-0.1,
             params={
                 "sensor_name": "contact_forces",
-                "asset_cfg": SceneEntityCfg("robot", body_names=[_UNDESIRED_CONTACT_BODY_REGEX]),
+                "asset_cfg": SceneEntityCfg(
+                    "robot",
+                    body_names=[
+                        r"^(?!left_ankle_roll_link$)(?!right_ankle_roll_link$)(?!left_wrist_yaw_link$)(?!right_wrist_yaw_link$).+$"
+                    ],
+                ),
                 "threshold": 1.0,
             },
         ),
-
         "applied_torque_limits_by_ratio": RewTermCfg(
             func=instinct_mdp.applied_torque_limits_by_ratio,
             weight=-0.05,
@@ -671,7 +647,6 @@ def make_rewards() -> dict[str, RewTermCfg]:
             },
         ),
     }
-
 
 
 def make_events() -> dict[str, EventTermCfg]:
@@ -692,7 +667,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "add_joint_default_pos": EventTermCfg(
             func=instinct_mdp.randomize_default_joint_pos,
             mode="startup",
@@ -703,7 +677,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "base_com": EventTermCfg(
             func=instinct_mdp.randomize_rigid_body_com,
             mode="startup",
@@ -716,7 +689,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 },
             },
         ),
-
         "randomize_ray_offsets": EventTermCfg(
             func=instinct_mdp.randomize_ray_offsets,
             mode="startup",
@@ -733,7 +705,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "randomize_actuator_gains": EventTermCfg(
             func=mdp.dr.pd_gains,
             mode="startup",
@@ -745,7 +716,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "randomize_rigid_body_mass": EventTermCfg(
             func=mdp.dr.body_mass,
             mode="startup",
@@ -765,7 +735,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "distribution": "uniform",
             },
         ),
-
         "match_motion_ref_with_scene": EventTermCfg(
             func=instinct_mdp.match_motion_ref_with_scene,
             mode="startup",
@@ -773,7 +742,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "motion_ref_cfg": SceneEntityCfg("motion_reference"),
             },
         ),
-
         "reset_robot": EventTermCfg(
             func=instinct_mdp.reset_robot_state_by_reference,
             mode="reset",
@@ -797,7 +765,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "randomize_joint_pos_range": (-0.1, 0.1),
             },
         ),
-
         "bin_fail_counter_smoothing": EventTermCfg(
             func=instinct_mdp.beyondmimic_bin_fail_counter_smoothing,
             mode="interval",
@@ -806,7 +773,6 @@ def make_events() -> dict[str, EventTermCfg]:
                 "curriculum_name": "beyond_adaptive_sampling",
             },
         ),
-
         # "push_robot": EventTermCfg(
         #     func=mdp.push_by_setting_velocity,
         #     mode="interval",
@@ -835,23 +801,25 @@ def make_curriculum() -> dict[str, CurriculumTermCfg]:
     }
 
 
-
 def make_terminations() -> dict[str, DoneTermCfg]:
     """Termination specifications for the perceptive shadowing MDP."""
     return {
         "time_out": DoneTermCfg(func=mdp.time_out, time_out=True),
-
         "illegal_reset_contact": DoneTermCfg(
             func=instinct_mdp.illegal_reset_contact,
             time_out=True,
             params={
                 "sensor_name": "contact_forces",
-                "asset_cfg": SceneEntityCfg("robot", body_names=[_UNDESIRED_CONTACT_BODY_REGEX]),
+                "asset_cfg": SceneEntityCfg(
+                    "robot",
+                    body_names=[
+                        r"^(?!left_ankle_roll_link$)(?!right_ankle_roll_link$)(?!left_wrist_yaw_link$)(?!right_wrist_yaw_link$).+$"
+                    ],
+                ),
                 "threshold": 500,
                 "episode_length_threshold": 2,
             },
         ),
-
         "base_pos_too_far": DoneTermCfg(
             func=instinct_mdp.pos_far_from_ref,
             time_out=False,
@@ -864,7 +832,6 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "height_only": True,
             },
         ),
-
         "base_pg_too_far": DoneTermCfg(
             func=instinct_mdp.projected_gravity_far_from_ref,
             time_out=False,
@@ -877,7 +844,6 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "print_reason": False,
             },
         ),
-
         "link_pos_too_far": DoneTermCfg(
             func=instinct_mdp.link_pos_far_from_ref,
             time_out=False,
@@ -900,7 +866,6 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "print_reason": False,
             },
         ),
-
         "dataset_exhausted": DoneTermCfg(
             func=instinct_mdp.dataset_exhausted,
             time_out=True,
@@ -909,14 +874,12 @@ def make_terminations() -> dict[str, DoneTermCfg]:
                 "print_reason": False,
             },
         ),
-
         "out_of_border": DoneTermCfg(
             func=instinct_mdp.terrain_out_of_bounds,
             time_out=True,
             params={"asset_cfg": SceneEntityCfg("robot"), "print_reason": False, "distance_buffer": 0.1},
         ),
     }
-
 
 
 def make_monitors() -> dict[str, MonitorTermCfg]:
@@ -930,7 +893,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 top_n_samples=5,
             ),
         ),
-
         "shadowing_position": MonitorTermCfg(
             func=ShadowingPositionMonitorTerm,
             params=dict(
@@ -940,7 +902,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 check_at_keyframe_threshold=0.03,
             ),
         ),
-
         "shadowing_rotation": MonitorTermCfg(
             func=ShadowingRotationMonitorTerm,
             params=dict(
@@ -949,7 +910,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 masking=True,
             ),
         ),
-
         "shadowing_joint_pos": MonitorTermCfg(
             func=ShadowingJointPosMonitorTerm,
             params=dict(
@@ -958,7 +918,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 masking=True,
             ),
         ),
-
         "shadowing_joint_vel": MonitorTermCfg(
             func=ShadowingJointVelMonitorTerm,
             params=dict(
@@ -967,7 +926,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 masking=True,
             ),
         ),
-
         "shadowing_link_pos_b": MonitorTermCfg(
             func=ShadowingLinkPosMonitorTerm,
             params=dict(
@@ -977,7 +935,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
                 masking=True,
             ),
         ),
-
         "shadowing_link_pos_w": MonitorTermCfg(
             func=ShadowingLinkPosMonitorTerm,
             params=dict(
@@ -988,7 +945,6 @@ def make_monitors() -> dict[str, MonitorTermCfg]:
             ),
         ),
     }
-
 
 
 @dataclass(kw_only=True)

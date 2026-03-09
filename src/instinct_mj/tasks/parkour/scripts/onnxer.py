@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import numpy as np
 import os
-import torch
 from typing import TYPE_CHECKING
 
+import numpy as np
 import onnxruntime as ort
+import torch
 
 if TYPE_CHECKING:
     from typing import Callable

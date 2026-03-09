@@ -6,4 +6,4 @@ from .agents.instinct_rl_amp_cfg import G1ParkourPPORunnerCfg
 
 
 def g1_parkour_amp_instinct_rl_cfg() -> G1ParkourPPORunnerCfg:
-  return G1ParkourPPORunnerCfg()
+    return G1ParkourPPORunnerCfg()

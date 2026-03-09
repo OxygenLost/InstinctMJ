@@ -1,7 +1,7 @@
 from __future__ import annotations
-from dataclasses import MISSING, dataclass, field
 
 from collections.abc import Callable
+from dataclasses import MISSING, dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 
 import torch
@@ -9,6 +9,7 @@ import torch
 from instinct_mj.motion_reference.motion_reference_cfg import MotionBufferCfg
 
 from .amass_motion import AmassMotion
+
 
 @dataclass(kw_only=True)
 class AmassMotionCfg(MotionBufferCfg):

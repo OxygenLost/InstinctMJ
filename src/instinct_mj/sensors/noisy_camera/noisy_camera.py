@@ -4,9 +4,8 @@ import inspect
 from collections.abc import Sequence
 
 import torch
-from prettytable import PrettyTable
-
 from mjlab.utils.lab_api.string import string_to_callable
+from prettytable import PrettyTable
 
 from instinct_mj.utils.buffers.async_circular_buffer import AsyncCircularBuffer
 from instinct_mj.utils.noise import ImageNoiseCfg
@@ -108,9 +107,7 @@ class NoisyCameraMixin:  # as a subclass of SensorBase
         self.output_history_buffers: dict[str, AsyncCircularBuffer] = dict()
 
         for data_type, history_length in self.cfg.data_histories.items():
-            self.output_history_buffers[data_type] = AsyncCircularBuffer(
-                history_length, self._num_envs, self._device
-            )
+            self.output_history_buffers[data_type] = AsyncCircularBuffer(history_length, self._num_envs, self._device)
             data_shape = self._camera_data.output[data_type].shape
             self._camera_data.output[f"{data_type}_history"] = torch.zeros(
                 (data_shape[0], history_length, *data_shape[1:]), device=self._device
@@ -123,9 +120,9 @@ class NoisyCameraMixin:  # as a subclass of SensorBase
         """
         for data_type in self.cfg.data_histories.keys():
             self.output_history_buffers[data_type].append(self._camera_data.output[data_type][env_ids], env_ids)
-            self._camera_data.output[f"{data_type}_history"][env_ids] = self.output_history_buffers[data_type].__getitem__(
-                batch_ids=env_ids
-            )
+            self._camera_data.output[f"{data_type}_history"][env_ids] = self.output_history_buffers[
+                data_type
+            ].__getitem__(batch_ids=env_ids)
 
     def reset_history_buffers(self, env_ids: torch.Tensor | Sequence[int] | None):
         """Reset the history buffers for the specified data types."""

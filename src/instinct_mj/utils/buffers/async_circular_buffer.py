@@ -1,6 +1,6 @@
-import torch
 from collections.abc import Sequence
 
+import torch
 from mjlab.utils.buffers import CircularBuffer
 
 

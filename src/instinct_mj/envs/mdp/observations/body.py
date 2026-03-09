@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
-import instinct_mj.utils.math as instinct_math
+import torch
 from mjlab.managers import ManagerTermBase, SceneEntityCfg
 from mjlab.utils.lab_api import math as math_utils
+
+import instinct_mj.utils.math as instinct_math
 
 if TYPE_CHECKING:
     from mjlab.entity import Entity as Articulation

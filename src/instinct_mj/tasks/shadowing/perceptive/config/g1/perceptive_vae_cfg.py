@@ -1,12 +1,12 @@
+import os
 from copy import deepcopy
 from dataclasses import dataclass, field
-import numpy as np
-import os
-import yaml
 from functools import partial
 
 import mjlab.envs.mdp as mdp
 import mjlab.sim as sim_utils
+import numpy as np
+import yaml
 from mjlab.managers import CurriculumTermCfg, EventTermCfg
 from mjlab.managers import ObservationGroupCfg as ObsGroupCfg
 from mjlab.managers import ObservationTermCfg as ObsTermCfg
@@ -20,9 +20,9 @@ import instinct_mj.tasks.shadowing.mdp as shadowing_mdp
 import instinct_mj.tasks.shadowing.perceptive.perceptive_env_cfg as perceptual_cfg
 from instinct_mj.assets.unitree_g1 import (
     G1_29DOF_TORSOBASE_POPSICLE_CFG,
+    G1_MJCF_PATH,
     G1_29Dof_TorsoBase_symmetric_augmentation_joint_mapping,
     G1_29Dof_TorsoBase_symmetric_augmentation_joint_reverse_buf,
-    G1_MJCF_PATH,
     beyondmimic_action_scale,
     beyondmimic_g1_29dof_actuator_cfgs,
     beyondmimic_g1_29dof_delayed_actuator_cfgs,
@@ -33,16 +33,14 @@ from instinct_mj.motion_reference.motion_files.aistpp_motion_cfg import AistppMo
 from instinct_mj.motion_reference.motion_files.amass_motion_cfg import AmassMotionCfg as AmassMotionCfgBase
 from instinct_mj.motion_reference.motion_files.terrain_motion_cfg import TerrainMotionCfg as TerrainMotionCfgBase
 from instinct_mj.motion_reference.utils import motion_interpolate_bilinear
-from instinct_mj.utils.motion_validation import resolve_datasets_root
 
 G1_CFG = G1_29DOF_TORSOBASE_POPSICLE_CFG
-PROPRIO_HISTORY_LENGTH = 8
-_DATASETS_ROOT = resolve_datasets_root()
 
 MOTION_FOLDER = (
-    str(_DATASETS_ROOT / "20251116_50cm_kneeClimbStep1")
-    # "~/Datasets/NoKov-Marslab-Motions-instinctnpz/20251116_50cm_kneeClimbStep1/20251106_diveroll4_roadRamp_noWall"
+    "~/Xyk/Datasets/20251116_50cm_kneeClimbStep1"
+    # "~/Xyk/Datasets/20251116_50cm_kneeClimbStep1/20251106_diveroll4_roadRamp_noWall"
 )
+
 
 @dataclass(kw_only=True)
 class TerrainMotionCfg(TerrainMotionCfgBase):
@@ -51,7 +49,6 @@ class TerrainMotionCfg(TerrainMotionCfgBase):
     metadata_yaml: object = field(default_factory=lambda: os.path.expanduser(f"{MOTION_FOLDER}/metadata.yaml"))
 
     max_origins_per_motion: int = 49
-
 
     ensure_link_below_zero_ground: bool = False
 
@@ -107,28 +104,9 @@ motion_reference_cfg = MotionReferenceManagerCfg(
     },
     mp_split_method="None",
 )
-
-
-def _make_motion_reference_cfg(*, debug_vis: bool = False) -> MotionReferenceManagerCfg:
-    cfg = deepcopy(motion_reference_cfg)
-    cfg.debug_vis = debug_vis
-    cfg.reference_entity_name = "robot_reference" if debug_vis else None
-    return cfg
-
-
-def _apply_motion_matched_terrain_source(
-    scene: perceptual_cfg.PerceptiveShadowingSceneCfg,
-    *,
-    default_path: str,
-    default_metadata_yaml: str,
-) -> None:
-    """Bind perceptive terrain generator to motion-matched source."""
-    terrain_generator = scene.terrain.terrain_generator
-    terrain_cfg = perceptual_cfg.get_motion_matched_subterrain_cfg(
-        terrain_generator.sub_terrains
-    )
-    terrain_cfg.path = default_path
-    terrain_cfg.metadata_yaml = default_metadata_yaml
+motion_reference_cfg_play = deepcopy(motion_reference_cfg)
+motion_reference_cfg_play.debug_vis = True
+motion_reference_cfg_play.reference_entity_name = "robot_reference"
 
 
 def make_vae_observations() -> dict[str, ObsGroupCfg]:
@@ -145,18 +123,17 @@ def make_vae_observations() -> dict[str, ObsGroupCfg]:
                 "history_skip_frames": 2,
             },
         ),
-
         # proprioception
         "projected_gravity": ObsTermCfg(
             func=mdp.projected_gravity,
             noise=UniformNoiseCfg(n_min=-0.05, n_max=0.05),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         # base_lin_vel = ObsTermCfg(func=mdp.base_lin_vel)
         "base_ang_vel": ObsTermCfg(
             func=mdp.base_ang_vel,
             noise=UniformNoiseCfg(n_min=-0.2, n_max=0.2),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_pos": ObsTermCfg(
             func=mdp.joint_pos_rel,
@@ -164,7 +141,7 @@ def make_vae_observations() -> dict[str, ObsGroupCfg]:
                 "asset_cfg": SceneEntityCfg("robot"),
             },
             noise=UniformNoiseCfg(n_min=-0.01, n_max=0.01),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
         "joint_vel": ObsTermCfg(
             func=mdp.joint_vel_rel,
@@ -172,9 +149,9 @@ def make_vae_observations() -> dict[str, ObsGroupCfg]:
                 "asset_cfg": SceneEntityCfg("robot"),
             },
             noise=UniformNoiseCfg(n_min=-0.5, n_max=0.5),
-            history_length=PROPRIO_HISTORY_LENGTH,
+            history_length=8,
         ),
-        "last_action": ObsTermCfg(func=mdp.last_action, history_length=PROPRIO_HISTORY_LENGTH),
+        "last_action": ObsTermCfg(func=mdp.last_action, history_length=8),
     }
 
     # Critic observations
@@ -192,13 +169,11 @@ def make_vae_observations() -> dict[str, ObsGroupCfg]:
             params={"command_name": "rotation_ref_command"},
             noise=UniformNoiseCfg(n_min=-0.05, n_max=0.05),
         ),
-
         "depth_image": ObsTermCfg(
             func=instinct_mdp.visualizable_image,
             # params={"sensor_cfg": SceneEntityCfg("camera"), "data_type": "distance_to_image_plane"},
             params={"sensor_cfg": SceneEntityCfg("camera"), "data_type": "distance_to_image_plane_noised"},
         ),
-
         # proprioception
         "projected_gravity": ObsTermCfg(
             func=mdp.projected_gravity,
@@ -243,27 +218,29 @@ def make_vae_observations() -> dict[str, ObsGroupCfg]:
         ),
     }
 
+
 @dataclass(kw_only=True)
 class G1PerceptiveVaeEnvCfg(perceptual_cfg.PerceptiveShadowingEnvCfg):
-    scene: perceptual_cfg.PerceptiveShadowingSceneCfg = field(default_factory=lambda: perceptual_cfg.PerceptiveShadowingSceneCfg(
-        num_envs=4096,
-        entities=perceptual_cfg.make_perceptive_scene_entities(
-            robot=deepcopy(G1_CFG),
-        ),
-        sensors=perceptual_cfg.make_perceptive_scene_sensors(
-            motion_reference=_make_motion_reference_cfg(debug_vis=False),
-            include_height_scanner=False,
-        ),
-    ))
+    scene: perceptual_cfg.PerceptiveShadowingSceneCfg = field(
+        default_factory=lambda: perceptual_cfg.PerceptiveShadowingSceneCfg(
+            num_envs=4096,
+            entities={"robot": deepcopy(G1_CFG)},
+            sensors=perceptual_cfg.make_perceptive_scene_sensors(
+                motion_reference=deepcopy(motion_reference_cfg),
+                include_height_scanner=False,
+            ),
+        )
+    )
     observations: dict = field(default_factory=make_vae_observations)
 
     def __post_init__(self):
         super().__post_init__()
 
-        perceptual_cfg.remove_scene_sensor_cfg(self.scene, "height_scanner")
-        camera_cfg = perceptual_cfg.get_camera_sensor_cfg(self.scene)
-        robot_cfg = perceptual_cfg.get_scene_entity_cfg(self.scene, "robot")
-        motion_reference_cfg = perceptual_cfg.get_motion_reference_cfg(self.scene)
+        camera_cfg = next(sensor_cfg for sensor_cfg in self.scene.sensors if sensor_cfg.name == "camera")
+        robot_cfg = self.scene.entities["robot"]
+        motion_reference_cfg = next(
+            sensor_cfg for sensor_cfg in self.scene.sensors if sensor_cfg.name == "motion_reference"
+        )
 
         camera_cfg.data_histories["distance_to_image_plane_noised"] = 10
         self.observations["policy"].terms["depth_image"].params["history_skip_frames"] = 3
@@ -273,49 +250,54 @@ class G1PerceptiveVaeEnvCfg(perceptual_cfg.PerceptiveShadowingEnvCfg):
         self.sim.mujoco.jacobian = "sparse"
 
         motion_buffer = list(motion_reference_cfg.motion_buffers.values())[0]
-        _apply_motion_matched_terrain_source(
-            self.scene,
-            default_path=motion_buffer.path,
-            default_metadata_yaml=motion_buffer.metadata_yaml,
-        )
+        terrain_cfg = self.scene.terrain.terrain_generator.sub_terrains["motion_matched"]
+        terrain_cfg.path = motion_buffer.path
+        terrain_cfg.metadata_yaml = motion_buffer.metadata_yaml
 
         self.run_name = "g1PerceptiveVae" + "".join(
             [
-                f"_propHistory{PROPRIO_HISTORY_LENGTH}",
+                "_propHistory8",
                 f"_depthHist{camera_cfg.data_histories['distance_to_image_plane_noised']}Skip{self.observations['policy'].terms['depth_image'].params['history_skip_frames']}",
             ]
         )
 
+
 @dataclass(kw_only=True)
 class G1PerceptiveVaeEnvCfg_PLAY(G1PerceptiveVaeEnvCfg):
-    scene: perceptual_cfg.PerceptiveShadowingSceneCfg = field(default_factory=lambda: perceptual_cfg.PerceptiveShadowingSceneCfg(
-        num_envs=1,
-        env_spacing=2.5,
-        entities=perceptual_cfg.make_perceptive_scene_entities_with_reference(
-            robot=deepcopy(G1_CFG),
-            robot_reference=deepcopy(G1_CFG),
-        ),
-        sensors=perceptual_cfg.make_perceptive_scene_sensors(
-            motion_reference=_make_motion_reference_cfg(debug_vis=True),
-            include_height_scanner=False,
-        ),
-    ))
+    scene: perceptual_cfg.PerceptiveShadowingSceneCfg = field(
+        default_factory=lambda: perceptual_cfg.PerceptiveShadowingSceneCfg(
+            num_envs=1,
+            env_spacing=2.5,
+            entities={
+                "robot": deepcopy(G1_CFG),
+                "robot_reference": deepcopy(G1_CFG),
+            },
+            sensors=perceptual_cfg.make_perceptive_scene_sensors(
+                motion_reference=deepcopy(motion_reference_cfg_play),
+                include_height_scanner=False,
+            ),
+        )
+    )
 
-    viewer: ViewerConfig = field(default_factory=lambda: ViewerConfig(
-        lookat=(0.0, 0.0, 0.0),
-        distance=3.2016,
-        elevation=51.3402,
-        azimuth=90.0,
-        origin_type=ViewerConfig.OriginType.ASSET_BODY,
-        entity_name="robot",
-        body_name="torso_link",
-    ))
+    viewer: ViewerConfig = field(
+        default_factory=lambda: ViewerConfig(
+            lookat=(0.0, 0.0, 0.0),
+            distance=3.2016,
+            elevation=51.3402,
+            azimuth=90.0,
+            origin_type=ViewerConfig.OriginType.ASSET_BODY,
+            entity_name="robot",
+            body_name="torso_link",
+        )
+    )
 
     def __post_init__(self):
         super().__post_init__()
 
-        motion_reference_cfg = perceptual_cfg.get_motion_reference_cfg(self.scene)
-        camera_cfg = perceptual_cfg.get_camera_sensor_cfg(self.scene)
+        motion_reference_cfg = next(
+            sensor_cfg for sensor_cfg in self.scene.sensors if sensor_cfg.name == "motion_reference"
+        )
+        camera_cfg = next(sensor_cfg for sensor_cfg in self.scene.sensors if sensor_cfg.name == "camera")
 
         # deactivate adaptive sampling and start from the 0.0s of the motion
         self.curriculum["beyond_adaptive_sampling"] = None

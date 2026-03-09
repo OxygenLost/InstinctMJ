@@ -33,6 +33,7 @@ dependencies = [
 instinct-train = "instinct_mj.scripts.instinct_rl.train:main"
 instinct-play = "instinct_mj.scripts.instinct_rl.play:main"
 instinct-list-envs = "instinct_mj.scripts.list_envs:main"
+instinct-format = "instinct_mj.scripts.format_code:main"
 instinct-depth-probe = "instinct_mj.scripts.depth_probe:main"
 instinct-perceptive-p0-1-7 = "instinct_mj.scripts.perceptive_p0_1_7:main"
 instinct-amass-filter = "instinct_mj.scripts.amass_filter:entry_point"
@@ -66,3 +67,14 @@ where = ["src"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 120
+py_version = 310
+skip_glob = ["docs/*", "logs/*", "outputs/*", "videos/*"]
+group_by_package = true
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known_firstparty = ["instinct_mj"]
+known_thirdparty = ["instinct_rl", "mjlab", "mujoco"]

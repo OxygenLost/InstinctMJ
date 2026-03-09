@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from mjlab.envs.mdp import base_ang_vel, joint_pos_rel, joint_vel_rel as joint_vel, last_action, projected_gravity
+import torch
+from mjlab.envs.mdp import base_ang_vel, joint_pos_rel
+from mjlab.envs.mdp import joint_vel_rel as joint_vel
+from mjlab.envs.mdp import last_action, projected_gravity
 from mjlab.managers import ManagerTermBase, SceneEntityCfg
 
 if TYPE_CHECKING:

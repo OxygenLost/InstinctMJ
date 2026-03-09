@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import os
 import pickle as pkl
-import yaml
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+import yaml
 from mjlab.utils.lab_api import math as math_utils
 
 from instinct_mj.motion_reference import MotionReferenceData, MotionReferenceState, MotionSequence
@@ -17,12 +17,12 @@ from instinct_mj.utils.torch import ConcatBatchTensor
 if TYPE_CHECKING:
     from .amass_motion_cfg import AmassMotionCfg
 
-import numpy as np
-import torch
-import torch.multiprocessing as mp
 from typing import Sequence
 
+import numpy as np
 import pytorch_kinematics as pk
+import torch
+import torch.multiprocessing as mp
 import warp as wp
 
 

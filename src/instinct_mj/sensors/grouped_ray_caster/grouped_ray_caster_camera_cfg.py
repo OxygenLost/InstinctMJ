@@ -1,15 +1,17 @@
 """Configuration for the grouped-ray-cast camera sensor."""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
 
+from dataclasses import dataclass, field
 from typing import Literal
 
-from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 from mjlab.sensor import PinholeCameraPatternCfg
+
+from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 
 from .grouped_ray_caster_camera import GroupedRayCasterCamera
 from .grouped_ray_caster_cfg import GroupedRayCasterCfg
+
 
 @dataclass(kw_only=True)
 class GroupedRayCasterCameraCfg(GroupedRayCasterCfg):
@@ -76,15 +78,17 @@ class GroupedRayCasterCameraCfg(GroupedRayCasterCfg):
     vertical_aperture_offset: float = 0.0
     """Vertical aperture offset in aperture-based intrinsic construction."""
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/RayCaster",
-        markers={
-            "hit": {
-                "radius": 0.02,
-                "color": (1.0, 0.0, 0.0, 1.0),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/RayCaster",
+            markers={
+                "hit": {
+                    "radius": 0.02,
+                    "color": (1.0, 0.0, 0.0, 1.0),
+                },
+                "frame": {
+                    "scale": (0.1, 0.1, 0.1),
+                },
             },
-            "frame": {
-                "scale": (0.1, 0.1, 0.1),
-            },
-        },
-    ))
+        )
+    )

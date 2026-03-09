@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 import warp as wp
-
-from instinct_mj.utils.torch import ConcatBatchTensor
 from mjlab.managers import ManagerTermBase
 
+from instinct_mj.utils.torch import ConcatBatchTensor
+
 if TYPE_CHECKING:
-    from instinct_mj.envs import ManagerBasedRLEnv
-    from instinct_mj.motion_reference.motion_files.amass_motion import AmassMotion
     from mjlab.managers import CurriculumTermCfg
 
+    from instinct_mj.envs import ManagerBasedRLEnv
     from instinct_mj.motion_reference import MotionReferenceManager
+    from instinct_mj.motion_reference.motion_files.amass_motion import AmassMotion
 
 
 class BeyondMimicAdaptiveWeighting(ManagerTermBase):

@@ -1,10 +1,6 @@
 import os
 
-from instinct_mj.rl import (
-    InstinctRlActorCriticCfg,
-    InstinctRlOnPolicyRunnerCfg,
-    InstinctRlPpoAlgorithmCfg,
-)
+from instinct_mj.rl import InstinctRlActorCriticCfg, InstinctRlOnPolicyRunnerCfg, InstinctRlPpoAlgorithmCfg
 from instinct_mj.tasks.config.rl_utils import default_policy_critic_normalizers
 
 

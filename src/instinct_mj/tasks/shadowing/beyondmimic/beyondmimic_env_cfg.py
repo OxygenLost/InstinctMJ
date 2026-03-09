@@ -1,8 +1,7 @@
-from dataclasses import field, dataclass, MISSING
+from dataclasses import MISSING, dataclass, field
 
-import mujoco
 import mjlab.envs.mdp as mdp
-from mjlab.entity import EntityCfg
+import mujoco
 from mjlab.managers import CurriculumTermCfg, EventTermCfg
 from mjlab.managers import ObservationGroupCfg as ObsGroupCfg
 from mjlab.managers import ObservationTermCfg as ObsTermCfg
@@ -12,8 +11,8 @@ from mjlab.managers import TerminationTermCfg as DoneTermCfg
 from mjlab.scene import SceneCfg as InteractiveSceneCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg, SensorCfg
 from mjlab.terrains import TerrainImporterCfg
-from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 from mjlab.utils.noise import UniformNoiseCfg
+from mjlab.utils.spec_config import MaterialCfg, TextureCfg
 
 import instinct_mj.envs.mdp as instinct_mdp
 from instinct_mj.envs.manager_based_rl_env_cfg import InstinctLabRLEnvCfg
@@ -25,36 +24,6 @@ from instinct_mj.monitors import (
     ShadowingLinkPosMonitorTerm,
     ShadowingPositionMonitorTerm,
     ShadowingRotationMonitorTerm,
-)
-from instinct_mj.motion_reference import MotionReferenceManagerCfg
-
-_UNDESIRED_CONTACT_BODY_NAMES = (
-    "pelvis",
-    "left_hip_pitch_link",
-    "left_hip_roll_link",
-    "left_hip_yaw_link",
-    "left_knee_link",
-    "left_ankle_pitch_link",
-    "right_hip_pitch_link",
-    "right_hip_roll_link",
-    "right_hip_yaw_link",
-    "right_knee_link",
-    "right_ankle_pitch_link",
-    "waist_yaw_link",
-    "waist_roll_link",
-    "torso_link",
-    "left_shoulder_pitch_link",
-    "left_shoulder_roll_link",
-    "left_shoulder_yaw_link",
-    "left_elbow_link",
-    "left_wrist_roll_link",
-    "left_wrist_pitch_link",
-    "right_shoulder_pitch_link",
-    "right_shoulder_roll_link",
-    "right_shoulder_yaw_link",
-    "right_elbow_link",
-    "right_wrist_roll_link",
-    "right_wrist_pitch_link",
 )
 
 
@@ -71,16 +40,28 @@ def _edit_beyondmimic_scene_spec(spec: mujoco.MjSpec) -> None:
     ground_rgb2 = (0.88, 0.88, 0.88)
     ground_mark_rgb = (0.80, 0.80, 0.80)
 
-    existing_skybox = next(
-        tex
-        for tex in spec.textures
-        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX
-    )
-    existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
-    existing_skybox.rgb1[:] = sky_rgb_top
-    existing_skybox.rgb2[:] = sky_rgb_horizon
-    existing_skybox.width = 512
-    existing_skybox.height = 3072
+    existing_skybox = None
+    for tex in spec.textures:
+        if tex.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            existing_skybox = tex
+            break
+
+    if existing_skybox is not None:
+        existing_skybox.builtin = mujoco.mjtBuiltin.mjBUILTIN_GRADIENT
+        existing_skybox.rgb1[:] = sky_rgb_top
+        existing_skybox.rgb2[:] = sky_rgb_horizon
+        existing_skybox.width = 512
+        existing_skybox.height = 3072
+    else:
+        TextureCfg(
+            name="beyondmimic_skybox",
+            type="skybox",
+            builtin="gradient",
+            rgb1=sky_rgb_top,
+            rgb2=sky_rgb_horizon,
+            width=512,
+            height=3072,
+        ).edit_spec(spec)
 
     TextureCfg(
         name=ground_texture_name,
@@ -116,70 +97,63 @@ class BeyondMimicSceneCfg(InteractiveSceneCfg):
     env_spacing: float = 4.0
 
     # terrain
-    terrain: object = field(default_factory=lambda: TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="plane",
-        terrain_generator=None,
-        physics_material=None,
-        visual_material=None,
-    ))
+    terrain: object = field(
+        default_factory=lambda: TerrainImporterCfg(
+            prim_path="/World/ground",
+            terrain_type="plane",
+            terrain_generator=None,
+            physics_material=None,
+            visual_material=None,
+        )
+    )
 
-    sensors: tuple[SensorCfg, ...] = field(default_factory=lambda: _make_beyondmimic_base_scene_sensors())
+    sensors: tuple[SensorCfg, ...] = field(
+        default_factory=lambda: (
+            ContactSensorCfg(
+                name="undesired_contact_forces",
+                primary=ContactMatch(
+                    mode="body",
+                    pattern=(
+                        "pelvis",
+                        "left_hip_pitch_link",
+                        "left_hip_roll_link",
+                        "left_hip_yaw_link",
+                        "left_knee_link",
+                        "left_ankle_pitch_link",
+                        "right_hip_pitch_link",
+                        "right_hip_roll_link",
+                        "right_hip_yaw_link",
+                        "right_knee_link",
+                        "right_ankle_pitch_link",
+                        "waist_yaw_link",
+                        "waist_roll_link",
+                        "torso_link",
+                        "left_shoulder_pitch_link",
+                        "left_shoulder_roll_link",
+                        "left_shoulder_yaw_link",
+                        "left_elbow_link",
+                        "left_wrist_roll_link",
+                        "left_wrist_pitch_link",
+                        "right_shoulder_pitch_link",
+                        "right_shoulder_roll_link",
+                        "right_shoulder_yaw_link",
+                        "right_elbow_link",
+                        "right_wrist_roll_link",
+                        "right_wrist_pitch_link",
+                    ),
+                    entity="robot",
+                ),
+                secondary=ContactMatch(mode="body", pattern="terrain"),
+                fields=("found", "force"),
+                reduce="netforce",
+                history_length=3,
+                num_slots=1,
+            ),
+        )
+    )
 
     def __post_init__(self):
         self.spec_fn = _edit_beyondmimic_scene_spec
-
-
-def make_beyondmimic_scene_entities(
-    *,
-    robot: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build BeyondMimic scene entities without bridge fields."""
-    # robots
-    # robot reference articulation
-    # motion reference is configured as a sensor cfg ("motion_reference").
-    return {"robot": robot}
-
-
-def make_beyondmimic_scene_entities_with_reference(
-    *,
-    robot: EntityCfg,
-    robot_reference: EntityCfg,
-) -> dict[str, EntityCfg]:
-    """Build BeyondMimic scene entities for play/debug with reference robot."""
-    return {
-        "robot": robot,
-        "robot_reference": robot_reference,
-    }
-
-
-def _make_beyondmimic_undesired_contact_sensor_cfg() -> ContactSensorCfg:
-    return ContactSensorCfg(
-        name="undesired_contact_forces",
-        primary=ContactMatch(
-            mode="body",
-            pattern=_UNDESIRED_CONTACT_BODY_NAMES,
-            entity="robot",
-        ),
-        secondary=ContactMatch(mode="body", pattern="terrain"),
-        fields=("found", "force"),
-        reduce="netforce",
-        history_length=3,
-        num_slots=1,
-    )
-
-
-def _make_beyondmimic_base_scene_sensors() -> tuple[SensorCfg, ...]:
-    return (_make_beyondmimic_undesired_contact_sensor_cfg(),)
-
-
-def make_beyondmimic_scene_sensors(
-    *,
-    motion_reference: MotionReferenceManagerCfg,
-) -> tuple[SensorCfg, ...]:
-    """Build BeyondMimic scene sensors without bridge fields."""
-    # lights are applied in _edit_beyondmimic_scene_spec.
-    return _make_beyondmimic_base_scene_sensors() + (motion_reference,)
 
 
 def make_beyondmimic_commands() -> dict[str, instinct_mdp.ShadowingCommandBaseCfg]:
@@ -213,7 +187,7 @@ def make_beyondmimic_actions() -> dict[str, mdp.JointPositionActionCfg]:
 
 def make_beyondmimic_observations() -> dict[str, ObsGroupCfg]:
     """BeyondMimic observation configuration following their approach."""
-    
+
     # Policy observations
     actor_terms = {
         "joint_pos_ref": ObsTermCfg(

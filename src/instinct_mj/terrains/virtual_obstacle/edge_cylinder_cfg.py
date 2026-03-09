@@ -1,11 +1,12 @@
 from __future__ import annotations
-from dataclasses import MISSING, dataclass, field
 
 import math
+from dataclasses import MISSING, dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 from mjlab.sensor import GridPatternCfg
+
+from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 
 from .edge_cylinder import (
     FeatureEdgeCylinder,

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Sequence
 
+import torch
 from mjlab.managers import ManagerTermBase, ManagerTermBaseCfg, SceneEntityCfg
 from mjlab.sensor import ContactSensor
 
@@ -79,10 +79,7 @@ def terrain_out_of_bounds(
             print(f"The base is out of the terrain border:", return_.sum())
         return return_
     else:
-        raise ValueError(
-            "Received unsupported terrain type, must be one of: "
-            "'plane', 'generator', 'hacked_generator'."
-        )
+        raise ValueError("Received unsupported terrain type, must be one of: 'plane', 'generator', 'hacked_generator'.")
 
 
 def abnormal_lin_vel(

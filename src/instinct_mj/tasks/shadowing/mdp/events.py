@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING, Literal
 
-from mjlab.utils.lab_api import math as math_utils
+import torch
 from mjlab.managers import SceneEntityCfg
+from mjlab.utils.lab_api import math as math_utils
 
 if TYPE_CHECKING:
     from mjlab.entity import Entity

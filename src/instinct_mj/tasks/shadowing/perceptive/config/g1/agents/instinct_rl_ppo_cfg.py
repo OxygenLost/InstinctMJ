@@ -1,6 +1,5 @@
-from dataclasses import field, dataclass
 import os
-
+from dataclasses import dataclass, field
 
 from instinct_mj.envs.mdp.observations.exteroception import visualizable_image
 from instinct_mj.rl import (
@@ -25,9 +24,11 @@ class Conv2dHeadEncoderCfg:
 
         paddings: list = field(default_factory=lambda: [1, 1])
 
-        hidden_sizes: list = field(default_factory=lambda: [
-            32,
-        ])
+        hidden_sizes: list = field(
+            default_factory=lambda: [
+                32,
+            ]
+        )
 
         nonlinearity: str = "ReLU"
 
@@ -41,6 +42,7 @@ class Conv2dHeadEncoderCfg:
 
     depth_image: object = field(default_factory=lambda: DepthImageEncoderCfg())
 
+
 @dataclass(kw_only=True)
 class PolicyCfg(InstinctRlEncoderActorCriticCfg):
     init_noise_std: float = 1.0
@@ -51,11 +53,12 @@ class PolicyCfg(InstinctRlEncoderActorCriticCfg):
 
     activation: str = "elu"
 
-
     encoder_configs: object = field(default_factory=lambda: Conv2dHeadEncoderCfg())
 
     critic_encoder_configs: object | None = None  # No encoder for critic
-  # No encoder for critic
+
+
+# No encoder for critic
 
 
 @dataclass(kw_only=True)
@@ -87,7 +90,6 @@ class AlgorithmCfg(InstinctRlPpoAlgorithmCfg):
     max_grad_norm: float = 1.0
 
 
-
 @dataclass(kw_only=True)
 class NormalizersCfg:
     policy: InstinctRlNormalizerCfg = field(default_factory=lambda: InstinctRlNormalizerCfg())
@@ -110,9 +112,7 @@ class G1PerceptiveShadowingPPORunnerCfg(InstinctRlOnPolicyRunnerCfg):
 
     experiment_name: str = "g1_perceptive_shadowing"
 
-
     load_run: object | None = None
-
 
     def __post_init__(self):
         super().__post_init__()

@@ -3,13 +3,13 @@ from __future__ import annotations
 import copy
 import gc
 import math
-import numpy as np
-import torch
-import trimesh
 import time
 from typing import TYPE_CHECKING
 
 import mujoco
+import numpy as np
+import torch
+import trimesh
 from mjlab.terrains import SubTerrainCfg as SubTerrainBaseCfg
 from mjlab.terrains import TerrainGenerator
 from mjlab.terrains import TerrainImporter as TerrainImporterBase
@@ -33,6 +33,7 @@ class Timer:
         print(f"{self.message}: {elapsed:.4f}s")
         return False
 
+
 if TYPE_CHECKING:
     from .terrain_importer_cfg import TerrainImporterCfg
     from .virtual_obstacle import VirtualObstacleBase
@@ -53,14 +54,12 @@ class TerrainImporter(TerrainImporterBase):
         self._virtual_obstacle_source = str(cfg.virtual_obstacle_source).lower()
         if self._virtual_obstacle_source not in ("mesh", "heightfield"):
             raise ValueError(
-                "virtual_obstacle_source must be 'mesh' or 'heightfield'. "
-                f"Got: {self._virtual_obstacle_source!r}"
+                f"virtual_obstacle_source must be 'mesh' or 'heightfield'. Got: {self._virtual_obstacle_source!r}"
             )
         self._virtual_obstacle_hfield_method = str(cfg.virtual_obstacle_hfield_method).lower()
         if self._virtual_obstacle_hfield_method != "mesh_like":
             raise ValueError(
-                "virtual_obstacle_hfield_method must be 'mesh_like'. "
-                f"Got: {self._virtual_obstacle_hfield_method!r}"
+                f"virtual_obstacle_hfield_method must be 'mesh_like'. Got: {self._virtual_obstacle_hfield_method!r}"
             )
         self._virtual_obstacles = {}
         for name, virtual_obstacle_cfg in cfg.virtual_obstacles.items():
@@ -88,9 +87,7 @@ class TerrainImporter(TerrainImporterBase):
 
         if self.cfg.terrain_type == "generator":
             if self.cfg.terrain_generator is None:
-                raise ValueError(
-                    "Input terrain type is 'generator' but no value provided for 'terrain_generator'."
-                )
+                raise ValueError("Input terrain type is 'generator' but no value provided for 'terrain_generator'.")
             terrain_generator_cls = getattr(
                 self.cfg.terrain_generator,
                 "class_type",

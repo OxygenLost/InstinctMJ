@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Sequence
 
 import torch
 import torch.nn.functional as F
-from typing_extensions import override
 from torchvision.transforms import GaussianBlur
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from instinct_mj.utils.noise import noise_cfg
@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 class NoiseModel:
     """Base class for noise models."""
 
-    def __init__(
-        self, noise_model_cfg: noise_cfg.NoiseModelCfg, num_envs: int, device: str
-    ):
+    def __init__(self, noise_model_cfg: noise_cfg.NoiseModelCfg, num_envs: int, device: str):
         self._noise_model_cfg = noise_model_cfg
         self._num_envs = num_envs
         self._device = device
@@ -49,10 +47,7 @@ class NoiseModelWithAdditiveBias(NoiseModel):
         super().__init__(noise_model_cfg, num_envs, device)
 
         # Validate bias configuration.
-        if (
-            not hasattr(noise_model_cfg, "bias_noise_cfg")
-            or noise_model_cfg.bias_noise_cfg is None
-        ):
+        if not hasattr(noise_model_cfg, "bias_noise_cfg") or noise_model_cfg.bias_noise_cfg is None:
             raise ValueError("NoiseModelWithAdditiveBiasCfg must have a valid bias_noise_cfg")
 
         self._bias_noise_cfg = noise_model_cfg.bias_noise_cfg

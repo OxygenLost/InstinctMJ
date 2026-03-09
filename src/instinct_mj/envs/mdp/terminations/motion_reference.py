@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import torch
 from typing import TYPE_CHECKING
 
-from mjlab.utils.lab_api import math as math_utils
+import torch
 from mjlab.managers import ManagerTermBase, SceneEntityCfg
+from mjlab.utils.lab_api import math as math_utils
 
 import instinct_mj.motion_reference.utils as motion_reference_utils
 

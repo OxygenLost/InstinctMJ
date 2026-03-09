@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable  # noqa: F401
-
 from typing import Literal
 
 import torch
@@ -10,6 +9,7 @@ from instinct_mj.motion_reference.motion_reference_cfg import MotionBufferCfg
 
 from .amass_motion_cfg import AmassMotionCfg
 from .emberUcb import EmberUcb
+
 
 class EmberUcbCfg(AmassMotionCfg):
     """Configuration for the EMBER UCB formatted motion data"""

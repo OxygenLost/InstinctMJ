@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+
 from instinct_mj.rl import (
     InstinctRlConv2dHeadCfg,
     InstinctRlEncoderMoEActorCriticCfg,
@@ -17,16 +18,16 @@ class DepthEncoderConv2dCfg(InstinctRlConv2dHeadCfg):
     paddings: list = field(default_factory=lambda: [1])
     nonlinearity: str = "ReLU"
     use_maxpool: bool = True
-    component_names: list = field(default_factory=lambda: [
-        "depth_image",
-    ])
-
+    component_names: list = field(
+        default_factory=lambda: [
+            "depth_image",
+        ]
+    )
 
 
 @dataclass(kw_only=True)
 class EncoderConfigs:
     depth_encoder: object = field(default_factory=lambda: DepthEncoderConv2dCfg())
-
 
 
 @dataclass(kw_only=True)
@@ -40,14 +41,15 @@ class MoEPolicyCfg(InstinctRlEncoderMoEActorCriticCfg):
     critic_encoder_configs: object = field(default_factory=lambda: EncoderConfigs())
 
 
-
 @dataclass(kw_only=True)
 class AmpAlgoCfg(InstinctRlPpoAlgorithmCfg):
     class_name: str = "WasabiPPO"
-    discriminator_kwargs: dict = field(default_factory=lambda: {
-        "hidden_sizes": [1024, 512],
-        "nonlinearity": "ReLU",
-    })
+    discriminator_kwargs: dict = field(
+        default_factory=lambda: {
+            "hidden_sizes": [1024, 512],
+            "nonlinearity": "ReLU",
+        }
+    )
     discriminator_reward_coef: float = 0.25
     discriminator_reward_type: str = "quad"
     discriminator_loss_func: str = "MSELoss"
@@ -55,10 +57,12 @@ class AmpAlgoCfg(InstinctRlPpoAlgorithmCfg):
     discriminator_optimizer_class_name: str = "AdamW"
     discriminator_weight_decay_coef: float = 3e-4
     discriminator_logit_weight_decay_coef: float = 0.04
-    discriminator_optimizer_kwargs: dict = field(default_factory=lambda: {
-        "lr": 1.0e-4,
-        "betas": [0.9, 0.999],
-    })
+    discriminator_optimizer_kwargs: dict = field(
+        default_factory=lambda: {
+            "lr": 1.0e-4,
+            "betas": [0.9, 0.999],
+        }
+    )
     value_loss_coef: float = 1.0
     use_clipped_value_loss: bool = True
     clip_param: float = 0.2
@@ -71,7 +75,6 @@ class AmpAlgoCfg(InstinctRlPpoAlgorithmCfg):
     lam: float = 0.95
     desired_kl: float = 0.01
     max_grad_norm: float = 1.0
-
 
 
 @dataclass(kw_only=True)

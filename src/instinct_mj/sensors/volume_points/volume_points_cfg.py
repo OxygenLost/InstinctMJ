@@ -1,7 +1,8 @@
 from dataclasses import MISSING, dataclass, field
 
-from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 from mjlab.sensor import SensorCfg
+
+from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
 
 from .points_generator_cfg import PointsGeneratorCfg
 from .volume_points import VolumePoints
@@ -19,6 +20,7 @@ VOLUME_POINTS_VISUALIZER_CFG = VisualizationMarkersCfg(
         },
     },
 )
+
 
 @dataclass(kw_only=True)
 class VolumePointsCfg(SensorCfg):

@@ -1,7 +1,8 @@
 """Timestamped buffer for lazy data caching with freshness tracking."""
 
-import torch
 from dataclasses import dataclass
+
+import torch
 
 
 @dataclass

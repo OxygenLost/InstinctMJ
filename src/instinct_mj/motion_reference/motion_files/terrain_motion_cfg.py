@@ -1,14 +1,16 @@
 from __future__ import annotations
+
+from collections.abc import Callable  # noqa: F401
 from dataclasses import MISSING, dataclass
+from typing import Literal
 
 import torch
-from collections.abc import Callable  # noqa: F401
-from typing import Literal
 
 from instinct_mj.motion_reference.motion_reference_cfg import MotionBufferCfg
 
 from .amass_motion_cfg import AmassMotionCfg
 from .terrain_motion import TerrainMotion
+
 
 @dataclass(kw_only=True)
 class TerrainMotionCfg(AmassMotionCfg):

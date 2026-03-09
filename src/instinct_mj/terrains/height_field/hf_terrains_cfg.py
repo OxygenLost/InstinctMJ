@@ -1,19 +1,14 @@
 import copy
+import uuid
 from dataclasses import MISSING, dataclass, field
 from typing import List
-import uuid
 
 import mujoco
 import numpy as np
 import trimesh
+from mjlab.terrains.terrain_generator import FlatPatchSamplingCfg, SubTerrainCfg, TerrainGeometry, TerrainOutput
 from scipy import ndimage
 
-from mjlab.terrains.terrain_generator import (
-    FlatPatchSamplingCfg,
-    SubTerrainCfg,
-    TerrainGeometry,
-    TerrainOutput,
-)
 from .utils import convert_height_field_to_mesh
 
 
@@ -422,6 +417,7 @@ class HfSteppingStonesTerrainCfg(HfTerrainBaseCfg):
     holes_depth: float = -10.0
     platform_width: float = 1.0
 
+
 from . import hf_terrains
 
 _RAW_PERLIN_PLANE_TERRAIN_FN = _unwrap_height_field_function(hf_terrains.perlin_plane_terrain)
@@ -440,6 +436,7 @@ _RAW_PERLIN_SLOPE_TERRAIN_FN = _unwrap_height_field_function(hf_terrains.perlin_
 _RAW_PERLIN_CROSS_STONE_TERRAIN_FN = _unwrap_height_field_function(hf_terrains.perlin_cross_stone_terrain)
 _RAW_PERLIN_SQUARE_GAP_TERRAIN_FN = _unwrap_height_field_function(hf_terrains.perlin_square_gap_terrain)
 
+
 @dataclass
 class WallTerrainCfgMixin:
     border_width: float = 0.0
@@ -447,9 +444,12 @@ class WallTerrainCfgMixin:
     vertical_scale: float = 0.005
     slope_threshold: float | None = None
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
-    wall_prob: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0])  # Probability of generating walls on [left, right, front, back] sides
+    wall_prob: List[float] = field(
+        default_factory=lambda: [0.0, 0.0, 0.0, 0.0]
+    )  # Probability of generating walls on [left, right, front, back] sides
     wall_height: float = 5.0  # Height of the walls
     wall_thickness: float = 0.05  # Thickness of the walls
+
 
 @dataclass(kw_only=True)
 class PerlinPlaneTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
@@ -469,6 +469,7 @@ class PerlinPlaneTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PLANE_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinPyramidSlopedTerrainCfg(HfPyramidSlopedTerrainCfg, WallTerrainCfgMixin):
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
@@ -481,6 +482,7 @@ class PerlinPyramidSlopedTerrainCfg(HfPyramidSlopedTerrainCfg, WallTerrainCfgMix
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PYRAMID_SLOPED_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinInvertedPyramidSlopedTerrainCfg(HfInvertedPyramidSlopedTerrainCfg, WallTerrainCfgMixin):
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
@@ -492,6 +494,7 @@ class PerlinInvertedPyramidSlopedTerrainCfg(HfInvertedPyramidSlopedTerrainCfg, W
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PYRAMID_SLOPED_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinPyramidStairsTerrainCfg(HfPyramidStairsTerrainCfg, WallTerrainCfgMixin):
@@ -506,6 +509,7 @@ class PerlinPyramidStairsTerrainCfg(HfPyramidStairsTerrainCfg, WallTerrainCfgMix
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PYRAMID_STAIRS_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinInvertedPyramidStairsTerrainCfg(HfInvertedPyramidStairsTerrainCfg, WallTerrainCfgMixin):
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
@@ -518,6 +522,7 @@ class PerlinInvertedPyramidStairsTerrainCfg(HfInvertedPyramidStairsTerrainCfg, W
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PYRAMID_STAIRS_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinDiscreteObstaclesTerrainCfg(HfDiscreteObstaclesTerrainCfg, WallTerrainCfgMixin):
@@ -533,6 +538,7 @@ class PerlinDiscreteObstaclesTerrainCfg(HfDiscreteObstaclesTerrainCfg, WallTerra
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_DISCRETE_OBSTACLES_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinWaveTerrainCfg(HfWaveTerrainCfg, WallTerrainCfgMixin):
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
@@ -543,6 +549,7 @@ class PerlinWaveTerrainCfg(HfWaveTerrainCfg, WallTerrainCfgMixin):
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_WAVE_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinSteppingStonesTerrainCfg(HfSteppingStonesTerrainCfg, WallTerrainCfgMixin):
@@ -557,6 +564,7 @@ class PerlinSteppingStonesTerrainCfg(HfSteppingStonesTerrainCfg, WallTerrainCfgM
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_STEPPING_STONES_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 # -- Newly added terrain configurations for parkour terrains-- #
 @dataclass(kw_only=True)
@@ -575,6 +583,7 @@ class PerlinParapetTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_PARAPET_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinGutterTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     """Configuration for a gutter parkour terrain."""
@@ -588,6 +597,7 @@ class PerlinGutterTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_GUTTER_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinStairsUpDownTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
@@ -612,6 +622,7 @@ class PerlinStairsUpDownTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_STAIRS_UP_DOWN_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinStairsDownUpTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     """Configuration for a stairs down and up parkour terrain."""
@@ -635,6 +646,7 @@ class PerlinStairsDownUpTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_STAIRS_DOWN_UP_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinTiltTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     """Configuration for a tilt terrain."""
@@ -650,6 +662,7 @@ class PerlinTiltTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_TILT_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinTiltedRampTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
@@ -669,6 +682,7 @@ class PerlinTiltedRampTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_TILTED_RAMP_TERRAIN_FN(difficulty, cfg_for_gen)
 
+
 @dataclass(kw_only=True)
 class PerlinSlopeTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
     """Configuration for a slope up and down terrain with a flat ground in the middle."""
@@ -684,6 +698,7 @@ class PerlinSlopeTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_SLOPE_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinCrossStoneTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
@@ -701,6 +716,7 @@ class PerlinCrossStoneTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):
 
     def _generate_height_field(self, difficulty: float, cfg_for_gen: HfTerrainBaseCfg) -> np.ndarray:
         return _RAW_PERLIN_CROSS_STONE_TERRAIN_FN(difficulty, cfg_for_gen)
+
 
 @dataclass(kw_only=True)
 class PerlinSquareGapTerrainCfg(HfTerrainBaseCfg, WallTerrainCfgMixin):

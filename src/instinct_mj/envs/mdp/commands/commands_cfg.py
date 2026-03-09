@@ -1,11 +1,16 @@
-from dataclasses import field, dataclass
 from collections.abc import Sequence
 from copy import deepcopy as _deepcopy
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Literal
 
 from mjlab.managers import CommandTermCfg, SceneEntityCfg
-from instinct_mj.visualization.marker_cfg import VisualizationMarkersCfg
-from instinct_mj.visualization.marker_cfg import BLUE_ARROW_X_MARKER_CFG, FRAME_MARKER_CFG, RED_ARROW_X_MARKER_CFG
+
+from instinct_mj.visualization.marker_cfg import (
+    BLUE_ARROW_X_MARKER_CFG,
+    FRAME_MARKER_CFG,
+    RED_ARROW_X_MARKER_CFG,
+    VisualizationMarkersCfg,
+)
 
 from .shadowing_command import (
     BaseHeightRefCommand,
@@ -27,6 +32,7 @@ from .shadowing_command import (
     ShadowingCommandBase,
     TimeToTargetCommand,
 )
+
 
 @dataclass(kw_only=True)
 class ShadowingCommandBaseCfg(CommandTermCfg):
@@ -69,6 +75,7 @@ class ShadowingCommandBaseCfg(CommandTermCfg):
                 setattr(result, k, _deepcopy(v, memo))
         return result
 
+
 @dataclass(kw_only=True)
 class PoseRefCommandCfg(ShadowingCommandBaseCfg):
     """Command for base pose reference, w.r.t current robot/reference position."""
@@ -98,10 +105,13 @@ class PoseRefCommandCfg(ShadowingCommandBaseCfg):
     NOTE: Using 0, 1, -1 for backward compatibility, because int(True) == 1 and int(False) == 0
     """
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/PoseRefCommand",
-        markers={"pose": {"scale": (0.15, 0.15, 0.15)}},
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/PoseRefCommand",
+            markers={"pose": {"scale": (0.15, 0.15, 0.15)}},
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class PositionRefCommandCfg(ShadowingCommandBaseCfg):
@@ -119,15 +129,18 @@ class PositionRefCommandCfg(ShadowingCommandBaseCfg):
     in real-time or not.
     """
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/PositionRefCommand",
-        markers={
-            "point": {
-                "radius": 0.04,
-                "color": (0.0, 1.0, 1.0, 1.0),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/PositionRefCommand",
+            markers={
+                "point": {
+                    "radius": 0.04,
+                    "color": (0.0, 1.0, 1.0, 1.0),
+                },
             },
-        },
-    ))
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class RotationRefCommandCfg(ShadowingCommandBaseCfg):
@@ -150,26 +163,35 @@ class RotationRefCommandCfg(ShadowingCommandBaseCfg):
     can be updated in real-time or not.
     """
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/RotationRefCommand",
-        markers={"pose": {"scale": (0.15, 0.15, 0.15)}},
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/RotationRefCommand",
+            markers={"pose": {"scale": (0.15, 0.15, 0.15)}},
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class ProjectedGravityRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = ProjectedGravityRefCommand
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: FRAME_MARKER_CFG.replace(
-        prim_path="/Visuals/ProjectedGravityRefCommand",
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: FRAME_MARKER_CFG.replace(
+            prim_path="/Visuals/ProjectedGravityRefCommand",
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class HeadingRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = HeadingRefCommand
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: RED_ARROW_X_MARKER_CFG.replace(
-        prim_path="/Visuals/HeadingRefCommand",
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: RED_ARROW_X_MARKER_CFG.replace(
+            prim_path="/Visuals/HeadingRefCommand",
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class HeadingErrorRefCommandCfg(ShadowingCommandBaseCfg):
@@ -177,39 +199,47 @@ class HeadingErrorRefCommandCfg(ShadowingCommandBaseCfg):
 
     class_type: type = HeadingErrorRefCommand
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: RED_ARROW_X_MARKER_CFG.replace(
-        prim_path="/Visuals/HeadingRefCommand",
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: RED_ARROW_X_MARKER_CFG.replace(
+            prim_path="/Visuals/HeadingRefCommand",
+        )
+    )
 
     realtime_mode: bool = True
     """ Since this reference is represented in robot's local-frame, the reference can be updated
     in real-time or not.
     """
 
+
 @dataclass(kw_only=True)
 class BaseHeightRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = BaseHeightRefCommand
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/BaseHeightRefCommand",
-        markers={
-            "patch": {
-                "radius": 0.4,
-                "height": 0.01,
-                "color": (0.0, 1.0, 0.0, 0.35),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/BaseHeightRefCommand",
+            markers={
+                "patch": {
+                    "radius": 0.4,
+                    "height": 0.01,
+                    "color": (0.0, 1.0, 0.0, 0.35),
+                },
             },
-        },
-    ))
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class BaseLinVelRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = BaseLinVelRefCommand
     """Command for base linear velocity reference, w.r.t current robot/reference position."""
 
+
 @dataclass(kw_only=True)
 class JointPosRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = JointPosRefCommand
     """To get the robot's default joint positions."""
+
 
 @dataclass(kw_only=True)
 class JointPosErrRefCommandCfg(ShadowingCommandBaseCfg):
@@ -220,9 +250,11 @@ class JointPosErrRefCommandCfg(ShadowingCommandBaseCfg):
     in real-time or not.
     """
 
+
 @dataclass(kw_only=True)
 class JointVelRefCommandCfg(ShadowingCommandBaseCfg):
     class_type: type = JointVelRefCommand
+
 
 @dataclass(kw_only=True)
 class LinkRefCommandCfg(ShadowingCommandBaseCfg):
@@ -242,35 +274,42 @@ class LinkRefCommandCfg(ShadowingCommandBaseCfg):
         - if rotation_mode is "tannorm", data_dim = 3 + 6, where 6 consists of tangent and normal vectors
     """
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/LinkRefCommand",
-        markers={
-            "point": {
-                "radius": 0.04,
-                "color": (0.0, 1.0, 0.0, 1.0),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/LinkRefCommand",
+            markers={
+                "point": {
+                    "radius": 0.04,
+                    "color": (0.0, 1.0, 0.0, 1.0),
+                },
             },
-        },
-    ))
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class LinkPosRefCommandCfg(LinkRefCommandCfg):
     class_type: type = LinkPosRefCommand
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: VisualizationMarkersCfg(
-        prim_path="/Visuals/LinkPosRefCommand",
-        markers={
-            "point": {
-                "radius": 0.04,
-                "color": (0.0, 1.0, 0.0, 1.0),
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: VisualizationMarkersCfg(
+            prim_path="/Visuals/LinkPosRefCommand",
+            markers={
+                "point": {
+                    "radius": 0.04,
+                    "color": (0.0, 1.0, 0.0, 1.0),
+                },
             },
-        },
-    ))
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class LinkRotRefCommandCfg(LinkRefCommandCfg):
     class_type: type = LinkRotRefCommand
 
     visualizer_cfg: VisualizationMarkersCfg = None
+
 
 @dataclass(kw_only=True)
 class LinkPosErrRefCommandCfg(LinkRefCommandCfg):
@@ -288,9 +327,12 @@ class LinkPosErrRefCommandCfg(LinkRefCommandCfg):
     # """
     # TODO: Currently, not implemented.
 
-    visualizer_cfg: VisualizationMarkersCfg = field(default_factory=lambda: BLUE_ARROW_X_MARKER_CFG.replace(
-        prim_path="/Visuals/LinkPosErrRefCommand",
-    ))
+    visualizer_cfg: VisualizationMarkersCfg = field(
+        default_factory=lambda: BLUE_ARROW_X_MARKER_CFG.replace(
+            prim_path="/Visuals/LinkPosErrRefCommand",
+        )
+    )
+
 
 @dataclass(kw_only=True)
 class LinkRotErrRefCommandCfg(LinkRefCommandCfg):
@@ -308,6 +350,7 @@ class LinkRotErrRefCommandCfg(LinkRefCommandCfg):
     """
 
     visualizer_cfg: VisualizationMarkersCfg = None
+
 
 @dataclass(kw_only=True)
 class TimeToTargetCommandCfg(ShadowingCommandBaseCfg):
